@@ -9,6 +9,8 @@ time.sleep(2) #warming up
 if not cap.isOpened():
   exit()
 
+
+
 #set camera param
 tdistCoeffs = np.zeros((5, 1))
 twidth = 640
@@ -16,8 +18,26 @@ theight = 480
 tmaxSize = max(twidth, theight)
 tcameraMatrix = np.array([[tmaxSize, 0, twidth / 2.0], [0, tmaxSize, theight / 2.0], [0, 0, 1]], np.float32)
 
+#set 3d face model
+faceModel3D = np.zeros((7, 3), dtype=np.float32)
+# RIGHTHEAR
+faceModel3D[0] = [-6.,   0.,  -8. ]
+# LEFTHEAR
+faceModel3D[1] = [ 6.,   0.,  -8. ]
+# NOSE
+faceModel3D[2] =  [ 0.,   4.,   2.5]
+# RIGHTMOUTH
+faceModel3D[3] = [-5.,   8.,   0. ]
+# LEFTMOUTH
+faceModel3D[4] = [ 5.,   8.,   0. ]
+# RIGHTEYE
+faceModel3D[5] = [-3.5,  0.,  -1. ]
+# LEFTEYE
+faceModel3D[6] = [ 3.5,  0.,  -1. ]
+
 objEyeTrack = eyeTrk.eyeTracker()
 objEyeTrack.initilaize_calib(tcameraMatrix, tdistCoeffs)
+# objEyeTrack.initialize_p3dmodel(faceModel3D)
 
 tcnt = 1
 # detector = dlib.get_frontal_face_detector()

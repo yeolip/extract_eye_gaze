@@ -31,63 +31,63 @@ eyeConst = 1.5
 FacePOI = np.zeros((7, 2), dtype=np.float32)
 ThreeDFacePOI = np.zeros((7, 3), dtype=np.float32)
 # RIGHTHEAR
-ThreeDFacePOI[0, 0] = -6
-ThreeDFacePOI[0, 1] = 0
-ThreeDFacePOI[0, 2] = -8
+ThreeDFacePOI[C_R_HEAR, 0] = -6
+ThreeDFacePOI[C_R_HEAR, 1] = 0
+ThreeDFacePOI[C_R_HEAR, 2] = -8
 # LEFTHEAR
-ThreeDFacePOI[1, 0] = 6
-ThreeDFacePOI[1, 1] = 0
-ThreeDFacePOI[1, 2] = -8
+ThreeDFacePOI[C_L_HEAR, 0] = 6
+ThreeDFacePOI[C_L_HEAR, 1] = 0
+ThreeDFacePOI[C_L_HEAR, 2] = -8
 # NOSE
-ThreeDFacePOI[2, 0] = 0
-ThreeDFacePOI[2, 1] = -4
-ThreeDFacePOI[2, 2] = 2.5
+ThreeDFacePOI[C_NOSE, 0] = 0
+ThreeDFacePOI[C_NOSE, 1] = -4
+ThreeDFacePOI[C_NOSE, 2] = 2.5
 # RIGHTMOUTH
-ThreeDFacePOI[3, 0] = -5
-ThreeDFacePOI[3, 1] = -8
-ThreeDFacePOI[3, 2] = 0
+ThreeDFacePOI[C_R_MOUTH, 0] = -5
+ThreeDFacePOI[C_R_MOUTH, 1] = -8
+ThreeDFacePOI[C_R_MOUTH, 2] = 0
 # LEFTMOUTH
-ThreeDFacePOI[4, 0] = 5
-ThreeDFacePOI[4, 1] = -8
-ThreeDFacePOI[4, 2] = 0
+ThreeDFacePOI[C_L_MOUTH, 0] = 5
+ThreeDFacePOI[C_L_MOUTH, 1] = -8
+ThreeDFacePOI[C_L_MOUTH, 2] = 0
 # RIGHTEYE
-ThreeDFacePOI[5, 0] = -3
-ThreeDFacePOI[5, 1] = 0
-ThreeDFacePOI[5, 2] = -1
+ThreeDFacePOI[C_R_EYE, 0] = -3
+ThreeDFacePOI[C_R_EYE, 1] = 0
+ThreeDFacePOI[C_R_EYE, 2] = -1
 # LEFTEYE
-ThreeDFacePOI[6, 0] = 3
-ThreeDFacePOI[6, 1] = 0
-ThreeDFacePOI[6, 2] = -1
+ThreeDFacePOI[C_L_EYE, 0] = 3
+ThreeDFacePOI[C_L_EYE, 1] = 0
+ThreeDFacePOI[C_L_EYE, 2] = -1
 
 ThreeDFacePOI2 = np.zeros((7, 3), dtype=np.float32)
 # RIGHTHEAR
-ThreeDFacePOI2[0, 0] = -6
-ThreeDFacePOI2[0, 1] = 0
-ThreeDFacePOI2[0, 2] = -8
+ThreeDFacePOI2[C_R_HEAR, 0] = -6
+ThreeDFacePOI2[C_R_HEAR, 1] = 0
+ThreeDFacePOI2[C_R_HEAR, 2] = -8
 # LEFTHEAR
-ThreeDFacePOI2[1, 0] = 6
-ThreeDFacePOI2[1, 1] = 0
-ThreeDFacePOI2[1, 2] = -8
+ThreeDFacePOI2[C_L_HEAR, 0] = 6
+ThreeDFacePOI2[C_L_HEAR, 1] = 0
+ThreeDFacePOI2[C_L_HEAR, 2] = -8
 # NOSE
-ThreeDFacePOI2[2, 0] = 0
-ThreeDFacePOI2[2, 1] = 4
-ThreeDFacePOI2[2, 2] = 2.5
+ThreeDFacePOI2[C_NOSE, 0] = 0
+ThreeDFacePOI2[C_NOSE, 1] = 4
+ThreeDFacePOI2[C_NOSE, 2] = 2.5
 # RIGHTMOUTH
-ThreeDFacePOI2[3, 0] = -5
-ThreeDFacePOI2[3, 1] = 8
-ThreeDFacePOI2[3, 2] = 0
+ThreeDFacePOI2[C_R_MOUTH, 0] = -5
+ThreeDFacePOI2[C_R_MOUTH, 1] = 8
+ThreeDFacePOI2[C_R_MOUTH, 2] = 0
 # LEFTMOUTH
-ThreeDFacePOI2[4, 0] = 5
-ThreeDFacePOI2[4, 1] = 8
-ThreeDFacePOI2[4, 2] = 0
+ThreeDFacePOI2[C_L_MOUTH, 0] = 5
+ThreeDFacePOI2[C_L_MOUTH, 1] = 8
+ThreeDFacePOI2[C_L_MOUTH, 2] = 0
 # RIGHTEYE
-ThreeDFacePOI2[5, 0] = -3.13
-ThreeDFacePOI2[5, 1] = 0
-ThreeDFacePOI2[5, 2] = -1
+ThreeDFacePOI2[C_R_EYE, 0] = -3.13
+ThreeDFacePOI2[C_R_EYE, 1] = 0
+ThreeDFacePOI2[C_R_EYE, 2] = -1
 # LEFTEYE
-ThreeDFacePOI2[6, 0] = 3.13
-ThreeDFacePOI2[6, 1] = 0
-ThreeDFacePOI2[6, 2] = -1
+ThreeDFacePOI2[C_L_EYE, 0] = 3.13
+ThreeDFacePOI2[C_L_EYE, 1] = 0
+ThreeDFacePOI2[C_L_EYE, 2] = -1
 
 
 
@@ -644,114 +644,106 @@ class eyeTracker(object):
         pass
 
     def initialize_p3dmodel(self, paramPOI):
+        # tparamPOI = np.zeros((7, 3), dtype=np.float32)
         # # RIGHTHEAR
-        # ThreeDFacePOI[0, 0] = -6
-        # ThreeDFacePOI[0, 1] = 0
-        # ThreeDFacePOI[0, 2] = -8
+        # tparamPOI[0] = [-6., 0., -8.]
         # # LEFTHEAR
-        # ThreeDFacePOI[1, 0] = 6
-        # ThreeDFacePOI[1, 1] = 0
-        # ThreeDFacePOI[1, 2] = -8
+        # tparamPOI[1] = [6., 0., -8.]
         # # NOSE
-        # ThreeDFacePOI[2, 0] = 0
-        # ThreeDFacePOI[2, 1] = -4
-        # ThreeDFacePOI[2, 2] = 2.5
+        # tparamPOI[2] = [0., 4., 2.5]
         # # RIGHTMOUTH
-        # ThreeDFacePOI[3, 0] = -5
-        # ThreeDFacePOI[3, 1] = -8
-        # ThreeDFacePOI[3, 2] = 0
+        # tparamPOI[3] = [-5., 8., 0.]
         # # LEFTMOUTH
-        # ThreeDFacePOI[4, 0] = 5
-        # ThreeDFacePOI[4, 1] = -8
-        # ThreeDFacePOI[4, 2] = 0
+        # tparamPOI[4] = [5., 8., 0.]
         # # RIGHTEYE
-        # ThreeDFacePOI[5, 0] = -3
-        # ThreeDFacePOI[5, 1] = 0
-        # ThreeDFacePOI[5, 2] = -1
+        # tparamPOI[5] = [-3.5, 0., -1.]
         # # LEFTEYE
-        # ThreeDFacePOI[6, 0] = 3
-        # ThreeDFacePOI[6, 1] = 0
-        # ThreeDFacePOI[6, 2] = -1
+        # tparamPOI[6] = [3.5, 0., -1.]
 
         self.ref_p3dmodel = paramPOI
-
-    def temp_run(self, image):
-
-        eye_centers = []
-        eye_centers2 = []
-        for index, POI in enumerate(self.faces_data):
-            # print('\nindex', index, '\nPOI', POI)
-            eye_corners = POI[2]
-            # print(eye_corners.shape)
-            eye_center = getEyePos2(eye_corners, image, 0)
-            eye_centers.append(eye_center)
-            # print('eye_centers', eye_centers)
-            cv2.circle(image, (int(eye_center[0][0]), int(eye_center[0][1])), 2, (255, 0, 0), -1)
-            cv2.circle(image, (int(eye_center[1][0][0]), int(eye_center[1][0][1])), 2, (0, 0, 255), -1)
-            cv2.circle(image, (int(eye_center[1][1][0]), int(eye_center[1][1][1])), 2, (0, 0, 255), -1)
-
-            eye_center = getEyePos2(eye_corners, image, 1)
-            eye_centers2.append(eye_center)
-            cv2.circle(image, (int(eye_center[0][0]), int(eye_center[0][1])), 2, (255, 0, 0), -1)
-            cv2.circle(image, (int(eye_center[1][0][0]), int(eye_center[1][0][1])), 2, (0, 0, 255), -1)
-            cv2.circle(image, (int(eye_center[1][1][0]), int(eye_center[1][1][1])), 2, (0, 0, 255), -1)
-
-
-        for index, POI in enumerate(self.faces_data):
-
-            tR, tT, eulerAngle_degree = self.getWorldCoordFromFace(self.ref_p3dmodel, POI[0], self.cameraMatrix, self.distCoeffs)
-
-            cv2.putText(image,'pitch {:.02f}, yaw {:.02f}, roll {:.02f}'.format(eulerAngle_degree[0],eulerAngle_degree[1],eulerAngle_degree[2]),
-                        (10, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=4)
-
-            tlandmark_2d = self.getLandmark(self.ref_p3dmodel[C_NOSE], tR, tT)
-            draw_xyz_axis(image, tlandmark_2d[0], round(tlandmark_2d[1:4,-1]))
-            # print('tlandmark_2d',  tlandmark_2d[0][0], np.uint16(tlandmark_2d[1:4,-1]))
-
-            eyeballgaze = self.getEyeballCenterGaze(self.ref_p3dmodel[C_R_EYE], tR, tT)
-            print('eyeballgaze', eyeballgaze)
-            # eyeball gaze
-            # cv2.line(image, (int((eye_centers2[index][1][1][0] + eye_centers2[index][1][0][0]) / 2),
-            #                 int((eye_centers2[index][1][1][1] + eye_centers2[index][1][0][1]) / 2)),
-            #          (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
-            cv2.line(image, (int((eye_centers2[index][1][1][0] + eye_centers2[index][1][0][0]) / 2),
-                            int((eye_centers2[index][1][1][1] + eye_centers2[index][1][0][1]) / 2)),
-                     (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
-
-            tview_2d = self.getEyeGaze_method_one(eye_centers2[index], tR, tT)
-            print('tview_2d', tview_2d)
-
-            # viewPoint, nose_vec, leye_vec, xyz_axis, lpupil_vec, lpupil_vec_from_eyeball, ltemp2 = getCoordFromFace(
-            #     POI[0], eye_centers2[index], image, self.cameraMatrix, self.distCoeffs)
-            # cv2.line(image, (int(eye_centers2[index][0][0]), int(eye_centers2[index][0][1])),
-            #          (int(eye_centers2[index][0][0] + viewPoint[0]), int(eye_centers2[index][0][1] + viewPoint[1])),
-            #          (255, 255, 0), 2, -1)
-            # # cv2.line(image, (int(POI[0][2][0]), int(POI[0][2][1])),
-            # #          (int(nose_vec[0][0][0]), int(nose_vec[0][0][1])), (0, 255, 255), 2, -1)
-            # #
-
-            # # # pupil gaze
-            # # cv2.line(image, (int(eye_centers2[index][0][0]), int(eye_centers2[index][0][1])),
-            # #          (int(lpupil_vec[0][0][0]), int(lpupil_vec[0][0][1])), (100, 0, 255), 2, -1)
-            # #
-            # # # cv2.line(image,(int(ltemp2[0][0][0]), int(ltemp2[0][0][1])),
-            # # #         (int(ltemp2[2][0][0]), int(ltemp2[2][0][1])), (255, 0, 0), 2, -1)
-            # cv2.line(image, (int(eye_centers2[index][0][0]), int(eye_centers2[index][0][1])),
-            #          (int(ltemp2[2][0][0]), int(ltemp2[2][0][1])), (255, 0, 0), 2, -1)
-            # # cv2.line(image, (int(eye_centers2[index][0][0]), int(eye_centers2[index][0][1])),
-            # #          (int(eye_centers2[index][0][0] + lpupil_vec_from_eyeball[0]),
-            # #           int(eye_centers2[index][0][1] + lpupil_vec_from_eyeball[1])), (100, 255, 100), 2, -1)
-            #
-            # # draw_xyz_axis(img, np.uint32(nose_end_point2D), np.uint32(imgpts))
-            # # print(xyz_axis)
-            # # draw_xyz_axis(image, np.array([[int(POI[0][2][0]), int(POI[0][2][1])]]), np.uint16(xyz_axis))
-
 
     def preprocess(self, image):
         self.faces_data = analyseFace(image, self.detector, self.predictor)
         print("# of detected : {:d} person".format(len(self.faces_data)))
         return len(self.faces_data)
+
+    def temp_run(self, image):
+
+        eye_centers_r = []
+        eye_centers_l = []
+        for index, POI in enumerate(self.faces_data):
+            # print('\nindex', index, '\nPOI', POI)
+            eye_corners = POI[2]
+            # print(eye_corners.shape)
+
+            #Right eye
+            eye_center_point_r = getEyePos2(eye_corners, image, 0)
+            eye_centers_r.append(eye_center_point_r)
+            # print('eye_centers_r', eye_centers_r)
+            cv2.circle(image, (int(eye_center_point_r[0][0]), int(eye_center_point_r[0][1])), 2, (255, 0, 0), -1)
+            cv2.circle(image, (int(eye_center_point_r[1][0][0]), int(eye_center_point_r[1][0][1])), 2, (0, 0, 255), -1)
+            cv2.circle(image, (int(eye_center_point_r[1][1][0]), int(eye_center_point_r[1][1][1])), 2, (0, 0, 255), -1)
+
+            #Left eye
+            eye_center_point_l = getEyePos2(eye_corners, image, 1)
+            eye_centers_l.append(eye_center_point_l)
+            cv2.circle(image, (int(eye_center_point_l[0][0]), int(eye_center_point_l[0][1])), 2, (255, 0, 0), -1)
+            cv2.circle(image, (int(eye_center_point_l[1][0][0]), int(eye_center_point_l[1][0][1])), 2, (0, 0, 255), -1)
+            cv2.circle(image, (int(eye_center_point_l[1][1][0]), int(eye_center_point_l[1][1][1])), 2, (0, 0, 255), -1)
+
+
+        for index, POI in enumerate(self.faces_data):
+
+            tR, tT, eulerAngle_degree = self.getWorldCoordFromFace(self.ref_p3dmodel, POI[0], self.cameraMatrix, self.distCoeffs)
+            # print('tR',tR,'tT',tT)
+            cv2.putText(image,'pitch {:.02f}, yaw {:.02f}, roll {:.02f}'.format(eulerAngle_degree[0],eulerAngle_degree[1],eulerAngle_degree[2]),
+                        (10, 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=4)
+
+            tlandmark_2d = self.getLandmark(self.ref_p3dmodel[C_NOSE], tR, tT)
+            draw_xyz_axis(image, tlandmark_2d[0], np.round(tlandmark_2d[1:4,-1]))
+            # print('tlandmark_2d',  tlandmark_2d[0][0], np.round(tlandmark_2d[1:4,-1]))
+
+            #Left eyeball gaze
+            eyeballgaze = self.getEyeballCenterGaze(self.ref_p3dmodel[C_L_EYE], tR, tT)
+            print('eyeballgaze', eyeballgaze)
+            # cv2.line(image, (int((eye_centers2[index][1][1][0] + eye_centers2[index][1][0][0]) / 2),
+            #                 int((eye_centers2[index][1][1][1] + eye_centers2[index][1][0][1]) / 2)),
+            #          (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
+            cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                     (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
+            #Right eyeball gaze
+            eyeballgaze = self.getEyeballCenterGaze(self.ref_p3dmodel[C_R_EYE], tR, tT)
+            print('eyeballgaze', eyeballgaze)
+            cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                     (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
+
+
+            #Left eye gaze - method one
+            tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_l[index], tR, tT)
+            print('tViewpoint_2d_l', tViewpoint_2d)
+            cv2.line(image, (int(eye_centers_l[index][0][0]), int(eye_centers_l[index][0][1])),
+                     (int(eye_centers_l[index][0][0] + tViewpoint_2d[0]), int(eye_centers_l[index][0][1] + tViewpoint_2d[1])),
+                     (255, 255, 0), 2, -1)
+            #Right eye gaze - method one
+            tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_r[index], tR, tT)
+            print('tViewpoint_2d_r', tViewpoint_2d)
+            cv2.line(image, (int(eye_centers_r[index][0][0]), int(eye_centers_r[index][0][1])),
+                     (int(eye_centers_r[index][0][0] + tViewpoint_2d[0]), int(eye_centers_r[index][0][1] + tViewpoint_2d[1])),
+                     (255, 255, 0), 2, -1)
+
+            tpoint_2d = self.getEyeGaze_method_two_EyeModel(eye_centers_l[index], tR, tT, self.ref_p3dmodel[C_L_EYE], POI[0][C_L_EYE], k=1.31, k0 =0.53 )
+
+            cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                     (int(tpoint_2d[2][0][0]), int(tpoint_2d[2][0][1])), (0, 255, 255), 2, -1)
+
+            tpoint_2d = self.getEyeGaze_method_two_EyeModel(eye_centers_r[index], tR, tT, self.ref_p3dmodel[C_R_EYE], POI[0][C_R_EYE], k=1.31, k0 =0.53 )
+
+            cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                     (int(tpoint_2d[2][0][0]), int(tpoint_2d[2][0][1])), (0, 255, 255), 2, -1)
+        pass
+
+
 
     def randering(self):
         pass
@@ -825,75 +817,82 @@ class eyeTracker(object):
         temp_point[2] = 25
 
         print(temp_point)
-        eyeballCenterGaze, jac = cv2.projectPoints(ref_point, rvec, tvec, cameraMatrix, distCoeffs)
+        eyeballCenterGaze, jac = cv2.projectPoints(temp_point, rvec, tvec, self.cameraMatrix, self.distCoeffs)
         # print('eyeballCenterGaze', eyeballCenterGaze)
         return eyeballCenterGaze
 
-        # nose_end_point2D, jacobian = cv2.projectPoints(np.array([ThreeDFacePOI2[2]]),rvec, tvec, cameraMatrix, distCoeffs)
-        # # print(nose_end_point2D)
-        #
-        # leye_end_point2D, jacobian = cv2.projectPoints(np.array([(3.0, 0.0, 25.0)]), rvec, tvec, cameraMatrix, distCoeffs)
-        # # print(reye_end_point2D)
-        #
-        #
-        # # pose estimation
-        # # self.axis = np.float32([[3, 0, 0], [0, 3, 0], [0, 0, -3]]).reshape(-1, 3)
-        # retGap, retGapCoord = sub_eyecenter_and_pupilcenter(FacePOI, eyeData[0], cameraMatrix, proj_matrix)
+    '''
+    it is for 3d 
+    K = 1.31    #distance between eyeball center and pupil center
+    K0 = 0.53    #cornea radius
+    '''
+    def getEyeGaze_method_two_EyeModel(self, pupilC_pnt, rvec, tvec, ref_eyeC_pnt, img_eyeC_pnt, k=1.31, k0 = 0.53):
+        print("\n\n///getEyeGaze_method_two_EyeModel//////////\n")
+        rvec_matrix = cv2.Rodrigues(rvec)[0]
+        proj_matrix = np.hstack((rvec_matrix, tvec))
+        # eulerAngles = cv2.decomposeProjectionMatrix(proj_matrix)
+        # print('eulerAngles', eulerAngles[6])
+
+        retGap, retGapCoord = self.extract_eyeballcenter_to_pupilcenter(img_eyeC_pnt, pupilC_pnt[0], proj_matrix, self.cameraMatrix, self.distCoeffs)
         # print(np.array([(3.0, 0.0, 25.0)] + retGap.T))
         # rvec_pupil = cv2.Rodrigues(np.dot(rot2,rt))[0]
         # lpupil_end_point2D, jacobian = cv2.projectPoints(np.array([(3.0, 0.0, 25.0)]), rvec_pupil, tvec+retGap, cameraMatrix, distCoeffs)
-        #
-        # K = 1.31    #distance between eyeball center and pupil center
-        # K0 = 0.53    #cornea radius
-        #
-        # tretGap = np.array(retGap)
-        # # tretGap[2] = 0
-        # tretGapCoord = np.array(retGapCoord.T[1])[0][0:3]
-        # tretGapCoord[2] = 0
-        # print('retGapCoord', np.array(retGapCoord.T[1])[0][0:3])
-        #
-        # taa = np.array([ThreeDFacePOI2[6]]) - np.array([(0, 0, K)])
-        # tbb = np.array([ThreeDFacePOI2[6]]) + tretGap.T
-        # # tbb = np.array([ThreeDFacePOI2[6]]) + tretGapCoord
-        #
-        # tcc = np.array([ThreeDFacePOI2[6]])
-        # temp2 = cv2.Rodrigues(tcc - taa)[0]
-        # print('temp2',temp2, tcc - taa)
-        # print('taa',taa)
-        # print('tbb',tbb)
-        # print('tbb-taa',(tbb - taa))
-        # print('tcc-taa',(tcc - taa))
-        # aaa = np.array(tbb - taa)
-        # bbb = np.array(tcc - taa)
-        # calc_ang = np.dot(aaa[0],bbb[0])
-        # print(calc_ang)
-        # calc_ang2 = np.sqrt(aaa[0][0]*aaa[0][0]+aaa[0][1]*aaa[0][1]+aaa[0][2]*aaa[0][2]) * np.sqrt(bbb[0][0]*bbb[0][0]+bbb[0][1]*bbb[0][1]+bbb[0][2]*bbb[0][2])
-        # tang = np.arccos(calc_ang/ calc_ang2)
-        # print('tang',tang*radianToDegree)
-        # temp  = cv2.Rodrigues(tbb - taa)[0]
-        # print(temp)
-        # print("norm", cv2.norm(tbb - taa))
-        # xx = np.arccos((tbb - taa)/cv2.norm(tbb - taa))
-        # print('x ang', xx * radianToDegree)
-        # temp3d = np.array([taa, tbb, (tbb - taa) *10+ taa])
-        # print(temp3d)
-        #
-        # tangle = math.atan2(cv2.norm(np.cross(aaa, bbb)), np.dot(aaa, bbb.T))
-        # print(tangle*radianToDegree)
-        #
-        # leyeball_to_pupil_point2D2, jacobian = cv2.projectPoints(temp3d, rvec, tvec,
-        #                                                  cameraMatrix, distCoeffs)
-        # print('leyeball_to_pupil_point2D2',leyeball_to_pupil_point2D2)
+
+        tretGap = np.array(retGap)
+        # tretGap[2] = 0
+        tretGapCoord = np.array(retGapCoord.T[1])[0][0:3]
+        tretGapCoord[2] = 0
+        print('retGapCoord', [np.array(retGapCoord.T[1])[0][0:3]])
+
+        taa = np.array([ref_eyeC_pnt]) - np.array([(0, 0, k)])
+        # tbb = np.array([ref_eyeC_pnt]) + tretGap.T
+        tbb = [np.array(retGapCoord.T[1])[0][0:3]]
+        # tbb = np.array([ThreeDFacePOI2[6]]) + tretGapCoord
+
+        tcc = np.array([ref_eyeC_pnt])
+        print('taa',taa)
+        print('tbb',tbb)
+        print('tbb-taa',(tbb - taa))
+        print('tcc-taa',(tcc - taa))
+
+        eyeGazePoint_3d = np.array([taa, tbb, (tbb - taa) *10+ taa])
+        print('3d eye gaze vector\n', eyeGazePoint_3d)
+
+        eyeGazePoint_2d, jac = cv2.projectPoints(eyeGazePoint_3d, rvec, tvec,
+                                                         self.cameraMatrix, self.distCoeffs)
+        print('2d eye gaze point\n',eyeGazePoint_2d)
         # leyeball_to_pupil_point2D = intersectionWithPlan(origin, np.dot(cv2.Rodrigues(xx)[0], np.dot(rt, [0, 0, 1])), camPlaneOrthVector, pointOnPlan)
         # print('leyeball_to_pupil_point2D',leyeball_to_pupil_point2D)
-        #
-        # # tview_point = intersectionWithPlan(origin , headDir, camPlaneOrthVector, pointOnPlan)
-        # # print('tview_point',np.array(tview_point).ravel())
-        #
-        # return tview_point, nose_end_point2D, leye_end_point2D, imgpts, lpupil_end_point2D, leyeball_to_pupil_point2D, leyeball_to_pupil_point2D2
 
-        # pass
+        # tview_point = intersectionWithPlan(origin , headDir, camPlaneOrthVector, pointOnPlan)
+        # print('tview_point',np.array(tview_point).ravel())
 
+        return eyeGazePoint_2d
+
+    def extract_eyeballcenter_to_pupilcenter(self, img_eyeC_pnt, pupilcenter, tproj_matrix, tcamera_matrix, tdist_coeffs):
+        print("//////////sub_eyecenter_and_pupilcenter")
+        print('image eyecenter ({:04.2f} {:04.2f}), pupil center ({:04.2f}, {:04.2f}) '.format(img_eyeC_pnt[0], img_eyeC_pnt[1], pupilcenter[0], pupilcenter[1]))
+        # print('//////', np.asmatrix(proj_matrix).I)
+
+        undist_ratio = cv2.undistortPoints(np.float32([[img_eyeC_pnt[0], img_eyeC_pnt[1]], [pupilcenter[0], pupilcenter[1]]]), tcamera_matrix, tdist_coeffs)
+        undist_ratio = undist_ratio.reshape(-1, 2)
+
+        undist_p = np.ones((undist_ratio.shape[0], undist_ratio.shape[1]+1))
+        undist_p[:,:-1] = undist_ratio
+        # print('undist_p', undist_p)
+        # print('calc_cameramatix', tcamera_matrix * np.asmatrix(undist_p.T))
+
+        ret_undist_p = (tcamera_matrix * np.asmatrix(undist_p.T)).T
+        b = np.asmatrix(tproj_matrix).I * np.asmatrix(tcamera_matrix).I * ret_undist_p.T
+
+        # b = np.asmatrix(tproj_matrix).I * np.asmatrix(tcamera_matrix).I * np.float32(
+        #     [[img_eyeC_pnt[0], img_eyeC_pnt[1], 1], [pupilcenter[0], pupilcenter[1], 1]]).T
+        b = b / b[3]
+
+        print(b)
+        print(np.subtract(b[0:-1, 1], b[0:-1, 0]))
+
+        return np.subtract(b[0:-1, 1], b[0:-1, 0]), b
 
 
 if __name__ == '__main__':
@@ -918,13 +917,8 @@ if __name__ == '__main__':
     # s_DSC05310.JPG
 
     test = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # print(test.shape[2])
-    # plt.imshow(test)
-    # plt.title('my picture')
-    # plt.show()
 
     # Model for face detect
-    # predictor_path =  'faceLandmarkModel.dat'
     predictor_path = './shape_predictor_68_face_landmarks.dat'
 
     detector = dlib.get_frontal_face_detector()
