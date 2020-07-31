@@ -7,6 +7,7 @@ import dlib
 import cv2
 import operator
 
+#3d face model point index
 C_R_HEAR = 0
 C_L_HEAR = 1
 C_NOSE   = 2
@@ -14,6 +15,24 @@ C_R_MOUTH= 3
 C_L_MOUTH= 4
 C_R_EYE  = 5
 C_L_EYE  = 6
+
+#2d face mappint point sequence
+RIGHT_EYE = list(range(36, 42))  # 6
+LEFT_EYE = list(range(42, 48))  # 6
+NOSE = list(range(27, 36))  # 9
+MOUTH_OUTLINE = list(range(48, 60))
+MOUTH_INNER = list(range(60, 68))  # 나는 60번이 INNER로 보임
+
+#eye open and repeat threshold
+# EYE_CLOSE_THRESH = 0.26
+EYE_CLOSE_THRESH = 1.5
+EYE_CLOSE_REPEAT = 15
+
+#status
+RET_NOT_DETECT = 0
+RET_DETECT = 1
+RET_OPEN   = 2
+RET_CLOSE  = 3
 
 degreeToRadian = math.pi/180
 radianToDegree = 180/math.pi
@@ -138,29 +157,36 @@ def eulerAnglesToRotationMatrix(theta):
 
     return R
 
+def calc_dist(p1, p2):
+    distance = math.sqrt(((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2))
+    return distance
+
+
 def analyseFace(img, detector, predictor, quality=1, offset=(0, 0)):
     dets = detector(np.array(img), quality)
     result = []
+    result_other = []
     for k, d in enumerate(dets):
         instantFacePOI = np.zeros((7, 2), dtype=np.float32)
         eyeCorners = np.zeros((2, 2, 2), dtype=np.float32)
+
         # Get the landmarks/parts for the face in box d.
         shape = predictor(np.array(img), d)
         # oreille droite
-        instantFacePOI[0][0] = shape.part(0).x + offset[0];
-        instantFacePOI[0][1] = shape.part(0).y + offset[1];
+        instantFacePOI[0][0] = shape.part(0).x + offset[0]
+        instantFacePOI[0][1] = shape.part(0).y + offset[1]
         # oreille gauche
-        instantFacePOI[1][0] = shape.part(16).x + offset[0];
-        instantFacePOI[1][1] = shape.part(16).y + offset[1];
+        instantFacePOI[1][0] = shape.part(16).x + offset[0]
+        instantFacePOI[1][1] = shape.part(16).y + offset[1]
         # nez
-        instantFacePOI[2][0] = shape.part(30).x + offset[0];
-        instantFacePOI[2][1] = shape.part(30).y + offset[1];
+        instantFacePOI[2][0] = shape.part(30).x + offset[0]
+        instantFacePOI[2][1] = shape.part(30).y + offset[1]
         # bouche gauche
-        instantFacePOI[3][0] = shape.part(48).x + offset[0];
-        instantFacePOI[3][1] = shape.part(48).y + offset[1];
+        instantFacePOI[3][0] = shape.part(48).x + offset[0]
+        instantFacePOI[3][1] = shape.part(48).y + offset[1]
         # bouche droite
-        instantFacePOI[4][0] = shape.part(54).x + offset[0];
-        instantFacePOI[4][1] = shape.part(54).y + offset[1];
+        instantFacePOI[4][0] = shape.part(54).x + offset[0]
+        instantFacePOI[4][1] = shape.part(54).y + offset[1]
 
         leftEyeX = 0
         leftEyeY = 0
@@ -179,8 +205,8 @@ def analyseFace(img, detector, predictor, quality=1, offset=(0, 0)):
         eyeCorners[0][0] = [shape.part(36).x + offset[0], shape.part(36).y + offset[1]]
         eyeCorners[0][1] = [shape.part(39).x + offset[0], shape.part(39).y + offset[1]]
 
-        instantFacePOI[5][0] = leftEyeX + offset[0];
-        instantFacePOI[5][1] = leftEyeY + offset[1];
+        instantFacePOI[5][0] = leftEyeX + offset[0]
+        instantFacePOI[5][1] = leftEyeY + offset[1]
 
         rightEyeX = 0
         rightEyeY = 0
@@ -198,16 +224,31 @@ def analyseFace(img, detector, predictor, quality=1, offset=(0, 0)):
         rightEyeY = int(rightEyeY / 4.0)
         eyeCorners[1][0] = [shape.part(42).x + offset[0], shape.part(42).y + offset[1]]
         eyeCorners[1][1] = [shape.part(45).x + offset[0], shape.part(45).y + offset[1]]
-        instantFacePOI[6][0] = rightEyeX + offset[0];
-        instantFacePOI[6][1] = rightEyeY + offset[1];
+        instantFacePOI[6][0] = rightEyeX + offset[0]
+        instantFacePOI[6][1] = rightEyeY + offset[1]
         data = [instantFacePOI, (
         int(d.left() + offset[0]), int(d.top() + offset[1]), int(d.right() + offset[0]), int(d.bottom() + offset[1])),
                 eyeCorners]
         result.append(data)
-    return result
+
+        p_lefteye = []
+        p_righteye = []
+        p_mouse_in = []
+        p_mouse_out = []
+
+        p_lefteye.extend([[shape.part(t).x, shape.part(t).y] for t in LEFT_EYE])
+        p_righteye.extend([[shape.part(t).x, shape.part(t).y] for t in RIGHT_EYE])
+        p_mouse_out.extend([[shape.part(t).x, shape.part(t).y] for t in MOUTH_OUTLINE])
+        p_mouse_in.extend([[shape.part(t).x, shape.part(t).y] for t in MOUTH_INNER])
+
+        result_other.append([p_lefteye, p_righteye, p_mouse_in, p_mouse_out])
+        print('result_other', result_other)
+
+    return result, result_other
 
 
 def computeGradient(img):
+    # out2 = cv2.Sobel(img,cv2.CV_8U,1,0,ksize=5)
     out = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)  # create a receiver array
     if img.shape[0] < 2 or img.shape[1] < 2:  # TODO I'm not sure that secure out of range
         print("EYES too small")
@@ -217,6 +258,8 @@ def computeGradient(img):
         for x in range(1, out.shape[1] - 1):
             out[y][x] = (img[y][x + 1] - img[y][x - 1]) / 2.0
         out[y][out.shape[1] - 1] = img[y][out.shape[1] - 1] - img[y][out.shape[1] - 2]
+    # cv2.imshow("test",out)
+    # cv2.waitKey(0)
     return out
 
 
@@ -663,15 +706,31 @@ class eyeTracker(object):
         self.ref_p3dmodel = paramPOI
 
     def preprocess(self, image):
-        self.faces_data = analyseFace(image, self.detector, self.predictor)
+        self.faces_data, self.other_data = analyseFace(image, self.detector, self.predictor)
         print("# of detected : {:d} person".format(len(self.faces_data)))
         return len(self.faces_data)
 
     def temp_run(self, image):
 
+
+        for index, (p_leye, p_reye, p_mouthin, p_mouthout) in enumerate(self.other_data):
+            print(index, '\n', p_leye, '\n', p_reye,'\n', p_mouthin,'\n', p_mouthout)
+            treye_text = "None"
+            tleye_text = "None"
+            tleye_status, tleye_text = self.eye_aspect_ratio(p_leye)
+            treye_status, treye_text = self.eye_aspect_ratio(p_reye)
+            tmouth_status, tmouth_text = self.mouth_open(p_mouthin, p_mouthout)
+            cv2.putText(image,
+                        'EyeRL=[{:s},{:s}],Mouth={:s}'.format(tleye_text, treye_text, tmouth_text),
+                        (max(0,p_reye[0][0]-200), max(0,p_reye[0][1]-50)),
+                        cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=4)
+
+            # p_leye, p_reye, p_mouthin, p_mouthout
+
         eye_centers_r = []
         eye_centers_l = []
         for index, POI in enumerate(self.faces_data):
+
             # print('\nindex', index, '\nPOI', POI)
             eye_corners = POI[2]
             # print(eye_corners.shape)
@@ -700,6 +759,7 @@ class eyeTracker(object):
                         (10, 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=4)
 
+
             tlandmark_2d = self.getLandmark(self.ref_p3dmodel[C_NOSE], tR, tT)
             draw_xyz_axis(image, tlandmark_2d[0], np.round(tlandmark_2d[1:4,-1]))
             # print('tlandmark_2d',  tlandmark_2d[0][0], np.round(tlandmark_2d[1:4,-1]))
@@ -722,15 +782,23 @@ class eyeTracker(object):
             #Left eye gaze - method one
             tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_l[index], tR, tT)
             print('tViewpoint_2d_l', tViewpoint_2d)
-            cv2.line(image, (int(eye_centers_l[index][0][0]), int(eye_centers_l[index][0][1])),
-                     (int(eye_centers_l[index][0][0] + tViewpoint_2d[0]), int(eye_centers_l[index][0][1] + tViewpoint_2d[1])),
+            # cv2.line(image, (int(eye_centers_l[index][0][0]), int(eye_centers_l[index][0][1])),
+            #          (int(eye_centers_l[index][0][0] + tViewpoint_2d[0]), int(eye_centers_l[index][0][1] + tViewpoint_2d[1])),
+            #          (255, 255, 0), 2, -1)
+            cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                     (int(eye_centers_l[index][0][0] + tViewpoint_2d[0]),
+                      int(eye_centers_l[index][0][1] + tViewpoint_2d[1])),
                      (255, 255, 0), 2, -1)
             #Right eye gaze - method one
             tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_r[index], tR, tT)
             print('tViewpoint_2d_r', tViewpoint_2d)
-            cv2.line(image, (int(eye_centers_r[index][0][0]), int(eye_centers_r[index][0][1])),
+            cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
                      (int(eye_centers_r[index][0][0] + tViewpoint_2d[0]), int(eye_centers_r[index][0][1] + tViewpoint_2d[1])),
                      (255, 255, 0), 2, -1)
+            # cv2.line(image, (int(eye_centers_r[index][0][0]), int(eye_centers_r[index][0][1])),
+            #          (int(eye_centers_r[index][0][0] + tViewpoint_2d[0]),
+            #           int(eye_centers_r[index][0][1] + tViewpoint_2d[1])),
+            #          (255, 255, 0), 2, -1)
 
             tpoint_2d = self.getEyeGaze_method_two_EyeModel(eye_centers_l[index], tR, tT, self.ref_p3dmodel[C_L_EYE], POI[0][C_L_EYE], k=1.31, k0 =0.53 )
 
@@ -894,6 +962,63 @@ class eyeTracker(object):
 
         return np.subtract(b[0:-1, 1], b[0:-1, 0]), b
 
+    def eye_aspect_ratio(self, teye):
+        ttext = "Not Detect"
+        tstatus = RET_NOT_DETECT
+        if(teye[0][0] == 0 or teye[0][1] == 0):
+            return tstatus, ttext
+        # 눈에 랜드마크 좌표를 찍어서 EAR값을 예측합니다.
+        A = calc_dist(teye[1], teye[5])
+        B = calc_dist(teye[2], teye[4])
+        C = calc_dist(teye[0], teye[3])
+        D = calc_dist(teye[1], teye[2])
+        E = calc_dist(teye[4], teye[5])
+
+        print(A,B,C)
+        # ear = (A + B) / (2.0 * C)
+        # ear = 2 * (A + B) - C
+        slope = (D+E) / (A+B)
+        # print('eye_aspect_ratio', ear)
+        print('eye_slope', slope)
+
+        if (slope > EYE_CLOSE_THRESH):
+            ttext = "Close"
+            tstatus = RET_CLOSE
+        else:
+            ttext = "Open"
+            tstatus = RET_OPEN
+
+        return tstatus, ttext
+
+    def mouth_open(self, tmouth_in, tmouth_out):
+        ttext = "Not Detect"
+        tstatus = RET_NOT_DETECT
+
+        print("tmouth_in",tmouth_in)
+        print("tmouth_out",tmouth_out)
+        p50 = tmouth_out[2]
+        p51 = tmouth_out[3]
+        p52 = tmouth_out[4]
+        p61 = tmouth_in[1]
+        p62 = tmouth_in[2]
+        p63 = tmouth_in[3]
+        p67 = tmouth_in[7]
+        p66 = tmouth_in[6]
+        p65 = tmouth_in[5]
+        A = calc_dist(p50, p61)
+        B = calc_dist(p51, p62)
+        C = calc_dist(p52, p63)
+        D = calc_dist(p67, p61)
+        E = calc_dist(p66, p62)
+        F = calc_dist(p65, p63)
+        if((A+B+C) < (D+E+F)):
+            ttext = "Open"
+            tstatus = RET_OPEN
+        else:
+            ttext = "Close"
+            tstatus = RET_CLOSE
+
+        return tstatus, ttext
 
 if __name__ == '__main__':
     distCoeffs = np.zeros((5, 1))
@@ -918,13 +1043,69 @@ if __name__ == '__main__':
 
     test = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+    # image = cv2.cvtColor(test, cv2.COLOR_RGB2GRAY)
+    #
+    #
+    # gradientX = computeGradient(image)
+    # gradientY = np.transpose(computeGradient(np.transpose(image)))
+    # gradientMatrix = matrixMagnitude(gradientX, gradientY)
+    #
+    # gradientThreshold = computeDynamicThreshold(gradientMatrix, kGradientThreshold)
+    # # Normalisation
+    # for y in range(0, image.shape[0]):  # Iterate through rows
+    #     for x in range(0, image.shape[1]):  # Iterate through columns
+    #         if (gradientMatrix[y][x] > gradientThreshold):
+    #             gradientX[y][x] = gradientX[y][x] / gradientMatrix[y][x]
+    #             gradientY[y][x] = gradientY[y][x] / gradientMatrix[y][x]
+    #         else:
+    #             gradientX[y][x] = 0.0
+    #             gradientY[y][x] = 0.0
+    #
+    # # Invert and blur befor algo
+    # weight = cv2.GaussianBlur(image, (kWeightBlurSize, kWeightBlurSize), 0)
+    # for y in range(0, weight.shape[0]):  # Iterate through rows
+    #     for x in range(0, weight.shape[1]):  # Iterate through columns
+    #         weight[y][x] = 255 - weight[y][x]
+    #
+    # outSum = np.zeros((image.shape[0], image.shape[1]), dtype=np.float32)  # create a receiver array
+    # # for y in range(0, outSum.shape[0]):  # Iterate through rows
+    # #     for x in range(0, outSum.shape[1]):  # Iterate through columns
+    # #         if (gradientX[y][x] == 0.0 and gradientY[y][x] == 0.0):
+    # #             continue
+    # #         testPossibleCentersFormula(x, y, weight, gradientX[y][x], gradientY[y][x], outSum)
+    #
+    # out = computeGradient(image)
+   # # plt.imshow(out)
+   # # plt.title('my pictures')
+   # # plt.show()
+
+    # laplacian = cv2.Laplacian(image, cv2.CV_8U, ksize=5)
+    # sobelx = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=5)
+    # sobely = cv2.Sobel(image, cv2.CV_8U, 0, 1, ksize=5)
+    # plt.subplot(3, 2, 1), plt.imshow(img, cmap='gray')
+    # plt.title('Original'), plt.xticks([]), plt.yticks([])
+    # plt.subplot(3, 2, 2), plt.imshow(laplacian, cmap='gray')
+    # plt.title('Laplacian'), plt.xticks([]), plt.yticks([])
+    # plt.subplot(3, 2, 3), plt.imshow(sobelx, cmap='gray')
+    # plt.title('Sobel X'), plt.xticks([]), plt.yticks([])
+    # plt.subplot(3, 2, 4), plt.imshow(sobely, cmap='gray')
+    # plt.title('Sobel Y'), plt.xticks([]), plt.yticks([])
+    # plt.subplot(3, 2, 5), plt.imshow(out, cmap='gray')
+    # plt.title('Gradient'), plt.xticks([]), plt.yticks([])
+    # plt.subplot(3, 2, 6), plt.imshow(outSum, cmap='gray')
+    # plt.title('outSum'), plt.xticks([]), plt.yticks([])
+    #
+    #
+    # plt.show()
+
+
     # Model for face detect
     predictor_path = './shape_predictor_68_face_landmarks.dat'
 
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(predictor_path)
 
-    faces_data = analyseFace(test, detector, predictor)
+    faces_data, _ = analyseFace(test, detector, predictor)
     print(len(faces_data))
     # print(faces_data)
 
