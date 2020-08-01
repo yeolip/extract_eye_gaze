@@ -27,6 +27,9 @@ MOUTH_INNER = list(range(60, 68))  # 나는 60번이 INNER로 보임
 # EYE_CLOSE_THRESH = 0.26
 EYE_CLOSE_THRESH = 1.5
 EYE_CLOSE_REPEAT = 15
+EYE_DROWSINESS_THRESH = 0.25
+EYE_DROWSINESS_REPEAT = 5
+
 
 #status
 RET_NOT_DETECT = 0
@@ -236,13 +239,13 @@ def analyseFace(img, detector, predictor, quality=1, offset=(0, 0)):
         p_mouse_in = []
         p_mouse_out = []
 
-        p_lefteye.extend([[shape.part(t).x, shape.part(t).y] for t in LEFT_EYE])
-        p_righteye.extend([[shape.part(t).x, shape.part(t).y] for t in RIGHT_EYE])
-        p_mouse_out.extend([[shape.part(t).x, shape.part(t).y] for t in MOUTH_OUTLINE])
-        p_mouse_in.extend([[shape.part(t).x, shape.part(t).y] for t in MOUTH_INNER])
+        p_lefteye.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in LEFT_EYE])
+        p_righteye.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in RIGHT_EYE])
+        p_mouse_out.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in MOUTH_OUTLINE])
+        p_mouse_in.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in MOUTH_INNER])
 
         result_other.append([p_lefteye, p_righteye, p_mouse_in, p_mouse_out])
-        print('result_other', result_other)
+        # print('result_other', result_other)
 
     return result, result_other
 
@@ -284,7 +287,7 @@ def findEyeCenter(eyeImage, offset):
     if (int(eyeImage.size / (eyeImage.shape[0] * (eyeImage.shape[1]))) == 3):
         eyeImg = np.asarray(cv2.cvtColor(eyeImage, cv2.COLOR_BGR2GRAY))
     else:
-        eyeImg = eyeImage.copy()
+        eyeImg = eyeImage  #.copy()
     eyeImg = eyeImg.astype(np.float32)
     scaleValue = 1.0;
     if (eyeImg.shape[0] > maxEyeSize or eyeImg.shape[1] > maxEyeSize):
@@ -666,6 +669,7 @@ def getIntersection(line1, line2):
 
 class eyeTracker(object):
     def __init__(self):
+        self.EyeCloseCounter = 0
         twidth = 640
         theight = 480
         tmaxSize = max(twidth, theight)
@@ -673,7 +677,7 @@ class eyeTracker(object):
         tD = np.zeros((5,1))
         self.initilaize_calib(tK, tD)
         self.initialize_p3dmodel(ThreeDFacePOI2)
-        predictor_path = './shape_predictor_68_face_landmarks.dat'
+        predictor_path = './dlib/shape_predictor_68_face_landmarks.dat'
 
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(predictor_path)
@@ -705,50 +709,42 @@ class eyeTracker(object):
 
         self.ref_p3dmodel = paramPOI
 
-    def preprocess(self, image):
-        self.faces_data, self.other_data = analyseFace(image, self.detector, self.predictor)
-        print("# of detected : {:d} person".format(len(self.faces_data)))
+    def preprocess(self, image, activeROI):
+        x = activeROI[0]
+        y = activeROI[1]
+        w = activeROI[2]
+        h = activeROI[3]
+        cropImage = image[ int(max(y , 0)):int(max(y + h, 0)),
+                           int(max(x , 0)):int(max(x + w, 0))]
+
+        self.faces_data, self.other_data = analyseFace(cropImage, self.detector, self.predictor, offset=(x,y))
+        if(len(self.faces_data)):
+            print("# of detected : {:d} person".format(len(self.faces_data)))
         return len(self.faces_data)
 
-    def temp_run(self, image):
-
-
-        for index, (p_leye, p_reye, p_mouthin, p_mouthout) in enumerate(self.other_data):
-            print(index, '\n', p_leye, '\n', p_reye,'\n', p_mouthin,'\n', p_mouthout)
-            treye_text = "None"
-            tleye_text = "None"
-            tleye_status, tleye_text = self.eye_aspect_ratio(p_leye)
-            treye_status, treye_text = self.eye_aspect_ratio(p_reye)
-            tmouth_status, tmouth_text = self.mouth_open(p_mouthin, p_mouthout)
-            cv2.putText(image,
-                        'EyeRL=[{:s},{:s}],Mouth={:s}'.format(tleye_text, treye_text, tmouth_text),
-                        (max(0,p_reye[0][0]-200), max(0,p_reye[0][1]-50)),
-                        cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=4)
-
-            # p_leye, p_reye, p_mouthin, p_mouthout
+    def temp_run(self, image, gray, gazeType=0):
 
         eye_centers_r = []
         eye_centers_l = []
         for index, POI in enumerate(self.faces_data):
-
             # print('\nindex', index, '\nPOI', POI)
-            eye_corners = POI[2]
             # print(eye_corners.shape)
 
+            eye_corners = POI[2]
             #Right eye
-            eye_center_point_r = getEyePos2(eye_corners, image, 0)
+            eye_center_point_r = getEyePos2(eye_corners, gray, 0)
             eye_centers_r.append(eye_center_point_r)
-            # print('eye_centers_r', eye_centers_r)
-            cv2.circle(image, (int(eye_center_point_r[0][0]), int(eye_center_point_r[0][1])), 2, (255, 0, 0), -1)
-            cv2.circle(image, (int(eye_center_point_r[1][0][0]), int(eye_center_point_r[1][0][1])), 2, (0, 0, 255), -1)
-            cv2.circle(image, (int(eye_center_point_r[1][1][0]), int(eye_center_point_r[1][1][1])), 2, (0, 0, 255), -1)
-
             #Left eye
-            eye_center_point_l = getEyePos2(eye_corners, image, 1)
+            eye_center_point_l = getEyePos2(eye_corners, gray, 1)
             eye_centers_l.append(eye_center_point_l)
-            cv2.circle(image, (int(eye_center_point_l[0][0]), int(eye_center_point_l[0][1])), 2, (255, 0, 0), -1)
-            cv2.circle(image, (int(eye_center_point_l[1][0][0]), int(eye_center_point_l[1][0][1])), 2, (0, 0, 255), -1)
-            cv2.circle(image, (int(eye_center_point_l[1][1][0]), int(eye_center_point_l[1][1][1])), 2, (0, 0, 255), -1)
+
+            if(gazeType%10 == 1):
+                cv2.circle(image, (int(eye_center_point_r[0][0]), int(eye_center_point_r[0][1])), 2, (255, 0, 0), -1)
+                cv2.circle(image, (int(eye_center_point_r[1][0][0]), int(eye_center_point_r[1][0][1])), 2, (0, 0, 255), -1)
+                cv2.circle(image, (int(eye_center_point_r[1][1][0]), int(eye_center_point_r[1][1][1])), 2, (0, 0, 255), -1)
+                cv2.circle(image, (int(eye_center_point_l[0][0]), int(eye_center_point_l[0][1])), 2, (255, 0, 0), -1)
+                cv2.circle(image, (int(eye_center_point_l[1][0][0]), int(eye_center_point_l[1][0][1])), 2, (0, 0, 255), -1)
+                cv2.circle(image, (int(eye_center_point_l[1][1][0]), int(eye_center_point_l[1][1][1])), 2, (0, 0, 255), -1)
 
 
         for index, POI in enumerate(self.faces_data):
@@ -756,64 +752,68 @@ class eyeTracker(object):
             tR, tT, eulerAngle_degree = self.getWorldCoordFromFace(self.ref_p3dmodel, POI[0], self.cameraMatrix, self.distCoeffs)
             # print('tR',tR,'tT',tT)
             cv2.putText(image,'pitch {:.02f}, yaw {:.02f}, roll {:.02f}'.format(eulerAngle_degree[0],eulerAngle_degree[1],eulerAngle_degree[2]),
-                        (10, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=4)
+                        (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), thickness=2, lineType=4)
 
 
             tlandmark_2d = self.getLandmark(self.ref_p3dmodel[C_NOSE], tR, tT)
             draw_xyz_axis(image, tlandmark_2d[0], np.round(tlandmark_2d[1:4,-1]))
             # print('tlandmark_2d',  tlandmark_2d[0][0], np.round(tlandmark_2d[1:4,-1]))
 
-            #Left eyeball gaze
-            eyeballgaze = self.getEyeballCenterGaze(self.ref_p3dmodel[C_L_EYE], tR, tT)
-            print('eyeballgaze', eyeballgaze)
-            # cv2.line(image, (int((eye_centers2[index][1][1][0] + eye_centers2[index][1][0][0]) / 2),
-            #                 int((eye_centers2[index][1][1][1] + eye_centers2[index][1][0][1]) / 2)),
-            #          (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
-            cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
-                     (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
-            #Right eyeball gaze
-            eyeballgaze = self.getEyeballCenterGaze(self.ref_p3dmodel[C_R_EYE], tR, tT)
-            print('eyeballgaze', eyeballgaze)
-            cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
-                     (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
+            if(gazeType//10%10 == 1):
+                #Left eyeball gaze
+                eyeballgaze = self.getEyeballCenterGaze(self.ref_p3dmodel[C_L_EYE], tR, tT)
+                print('eyeballgaze', eyeballgaze)
+                cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                         (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
+                #Right eyeball gaze
+                eyeballgaze = self.getEyeballCenterGaze(self.ref_p3dmodel[C_R_EYE], tR, tT)
+                print('eyeballgaze', eyeballgaze)
+                cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                         (int(eyeballgaze[0][0][0]), int(eyeballgaze[0][0][1])), (255, 0, 255), 2, -1)
 
+            if (gazeType // 100 % 10 == 1):
+                #Left eye gaze - method one
+                tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_l[index], tR, tT)
+                print('tViewpoint_2d_l', tViewpoint_2d)
+                cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                         (int(eye_centers_l[index][0][0] + tViewpoint_2d[0]),
+                          int(eye_centers_l[index][0][1] + tViewpoint_2d[1])),
+                         (255, 255, 0), 2, -1)
+                #Right eye gaze - method one
+                tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_r[index], tR, tT)
+                print('tViewpoint_2d_r', tViewpoint_2d)
+                cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                         (int(eye_centers_r[index][0][0] + tViewpoint_2d[0]), int(eye_centers_r[index][0][1] + tViewpoint_2d[1])),
+                         (255, 255, 0), 2, -1)
 
-            #Left eye gaze - method one
-            tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_l[index], tR, tT)
-            print('tViewpoint_2d_l', tViewpoint_2d)
-            # cv2.line(image, (int(eye_centers_l[index][0][0]), int(eye_centers_l[index][0][1])),
-            #          (int(eye_centers_l[index][0][0] + tViewpoint_2d[0]), int(eye_centers_l[index][0][1] + tViewpoint_2d[1])),
-            #          (255, 255, 0), 2, -1)
-            cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
-                     (int(eye_centers_l[index][0][0] + tViewpoint_2d[0]),
-                      int(eye_centers_l[index][0][1] + tViewpoint_2d[1])),
-                     (255, 255, 0), 2, -1)
-            #Right eye gaze - method one
-            tViewpoint_2d = self.getEyeGaze_method_one(eye_centers_r[index], tR, tT)
-            print('tViewpoint_2d_r', tViewpoint_2d)
-            cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
-                     (int(eye_centers_r[index][0][0] + tViewpoint_2d[0]), int(eye_centers_r[index][0][1] + tViewpoint_2d[1])),
-                     (255, 255, 0), 2, -1)
-            # cv2.line(image, (int(eye_centers_r[index][0][0]), int(eye_centers_r[index][0][1])),
-            #          (int(eye_centers_r[index][0][0] + tViewpoint_2d[0]),
-            #           int(eye_centers_r[index][0][1] + tViewpoint_2d[1])),
-            #          (255, 255, 0), 2, -1)
+            if (gazeType // 1000 % 10 == 1):
+                tpoint_2d = self.getEyeGaze_method_two_EyeModel(eye_centers_l[index], tR, tT, self.ref_p3dmodel[C_L_EYE], POI[0][C_L_EYE], k=1.31, k0 =0.53 )
 
-            tpoint_2d = self.getEyeGaze_method_two_EyeModel(eye_centers_l[index], tR, tT, self.ref_p3dmodel[C_L_EYE], POI[0][C_L_EYE], k=1.31, k0 =0.53 )
+                cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                         (int(tpoint_2d[2][0][0]), int(tpoint_2d[2][0][1])), (0, 255, 255), 2, -1)
 
-            cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
-                     (int(tpoint_2d[2][0][0]), int(tpoint_2d[2][0][1])), (0, 255, 255), 2, -1)
+                tpoint_2d = self.getEyeGaze_method_two_EyeModel(eye_centers_r[index], tR, tT, self.ref_p3dmodel[C_R_EYE], POI[0][C_R_EYE], k=1.31, k0 =0.53 )
 
-            tpoint_2d = self.getEyeGaze_method_two_EyeModel(eye_centers_r[index], tR, tT, self.ref_p3dmodel[C_R_EYE], POI[0][C_R_EYE], k=1.31, k0 =0.53 )
-
-            cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
-                     (int(tpoint_2d[2][0][0]), int(tpoint_2d[2][0][1])), (0, 255, 255), 2, -1)
+                cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                         (int(tpoint_2d[2][0][0]), int(tpoint_2d[2][0][1])), (0, 255, 255), 2, -1)
         pass
 
 
 
-    def randering(self):
+    def randering(self, image):
+        for index, (p_leye, p_reye, p_mouthin, p_mouthout) in enumerate(self.other_data):
+            # print(index, '\n', p_leye, '\n', p_reye,'\n', p_mouthin,'\n', p_mouthout)
+            treye_text = "None"
+            tleye_text = "None"
+            tleye_status, tleye_text, tleye_value = self.eye_aspect_ratio(p_leye)
+            treye_status, treye_text, treye_value = self.eye_aspect_ratio(p_reye)
+            tmouth_status, tmouth_text = self.mouth_open(p_mouthin, p_mouthout)
+            cv2.putText(image,
+                        'EyeRL=[{:s},{:s}],Mouth={:s}'.format(tleye_text, treye_text, tmouth_text),
+                        (max(0,p_reye[0][0]-200), max(0,p_reye[0][1]-50)),
+                        cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=4)
+            self.drowsiness_detect(image, tleye_value)
         pass
 
     # Given the data from a faceExtract
@@ -974,28 +974,31 @@ class eyeTracker(object):
         D = calc_dist(teye[1], teye[2])
         E = calc_dist(teye[4], teye[5])
 
-        print(A,B,C)
-        # ear = (A + B) / (2.0 * C)
+        # print(A,B,C)
+        ear = (A + B) / (2.0 * C)
         # ear = 2 * (A + B) - C
         slope = (D+E) / (A+B)
-        # print('eye_aspect_ratio', ear)
-        print('eye_slope', slope)
+        print('eye_aspect_ratio', ear)
+        # print('eye_slope', slope)
 
-        if (slope > EYE_CLOSE_THRESH):
+        if( ear < EYE_DROWSINESS_THRESH):
+        # if (slope > EYE_CLOSE_THRESH):
             ttext = "Close"
+            # ttext = "{:.2f}{:.2f}".format(ear,slope)
             tstatus = RET_CLOSE
         else:
             ttext = "Open"
+            # ttext = "{:.2f}{:.2f}".format(ear,slope)
             tstatus = RET_OPEN
 
-        return tstatus, ttext
+        return tstatus, ttext, ear
 
     def mouth_open(self, tmouth_in, tmouth_out):
         ttext = "Not Detect"
         tstatus = RET_NOT_DETECT
 
-        print("tmouth_in",tmouth_in)
-        print("tmouth_out",tmouth_out)
+        # print("tmouth_in",tmouth_in)
+        # print("tmouth_out",tmouth_out)
         p50 = tmouth_out[2]
         p51 = tmouth_out[3]
         p52 = tmouth_out[4]
@@ -1019,6 +1022,34 @@ class eyeTracker(object):
             tstatus = RET_CLOSE
 
         return tstatus, ttext
+
+    def drowsiness_detect(self,image, ear):
+        # check to see if the eye aspect ratio is below the blink
+        # threshold, and if so, increment the blink frame counter
+        if ear < EYE_DROWSINESS_THRESH:
+            self.EyeCloseCounter += 1
+            # if the eyes were closed for a sufficient number of
+            # then sound the alarm
+            if self.EyeCloseCounter >= EYE_DROWSINESS_REPEAT:
+                # if the alarm is not on, turn it on
+                # if not ALARM_ON:
+                #     ALARM_ON = True
+                #     # check to see if an alarm file was supplied,
+                #     # and if so, start a thread to have the alarm
+                #     # sound played in the background
+                #     if args["alarm"] != "":
+                #         t = Thread(target=sound_alarm,
+                #                    args=(args["alarm"],))
+                #         t.deamon = True
+                #         t.start()
+                # draw an alarm on the frame
+                cv2.putText(image, "!!!!!!  DROWSINESS ALERT  !!!!!!", (10, 60),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        # otherwise, the eye aspect ratio is not below the blink
+        # threshold, so reset the counter and alarm
+        else:
+            self.EyeCloseCounter = 0
+            # ALARM_ON = False
 
 if __name__ == '__main__':
     distCoeffs = np.zeros((5, 1))
