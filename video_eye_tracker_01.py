@@ -4,6 +4,18 @@ import dlib
 import numpy as np
 import eye_tracker_05 as eyeTrk
 
+def shape_to_np(shape, dtype="int"):
+	# initialize the list of (x, y)-coordinates
+	coords = np.zeros((shape.num_parts, 2), dtype=dtype)
+
+	# loop over all facial landmarks and convert them
+	# to a 2-tuple of (x, y)-coordinates
+	for i in range(0, shape.num_parts):
+		coords[i] = (shape.part(i).x, shape.part(i).y)
+
+	# return the list of (x, y)-coordinates
+	return coords
+
 cap = cv2.VideoCapture(0)
 time.sleep(2) #warming up
 if not cap.isOpened():
@@ -40,8 +52,9 @@ objEyeTrack.initilaize_calib(tcameraMatrix, tdistCoeffs)
 # objEyeTrack.initialize_p3dmodel(faceModel3D)
 
 tcnt = 1
-# detector = dlib.get_frontal_face_detector()
-# predictor = dlib.shape_predictor("./shape_predictor_68_face_landmarks.dat")
+detector = dlib.get_frontal_face_detector()
+# predictor = dlib.shape_predictor("./dlib/shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor("./dlib/type2mini.dat")
 
 ttimecount = 0
 FRAME_REPEAT = 30
@@ -62,26 +75,29 @@ while True:
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     if not ret:
         break
-    # print(int(image.size/(image.shape[0]*(image.shape[1]))))
-    # print(int(img.size / (img.shape[0] * (img.shape[1]))))
 
-    tempWidth = 80
-    available = objEyeTrack.preprocess(img, (160-tempWidth,120-tempWidth,320+tempWidth,240+tempWidth))
-    if(available > 0 ):
-        objEyeTrack.temp_run(image, img, gazeType=viewType )
-        objEyeTrack.randering(image)
+    # tempWidth = 80
+    # available = objEyeTrack.preprocess(img, (160-tempWidth,120-tempWidth,320+tempWidth,240+tempWidth))
+    # available = objEyeTrack.preprocess(img, (0,0, 640 , 480))
+    # if(available > 0 ):
+    #     objEyeTrack.temp_run(image, img, gazeType=viewType )
+    #     objEyeTrack.randering(image)
 
-    # faces = detector(image)
-    # for face in faces:
-    #     x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
-    #     #cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), thickness=2)
-    #
-    #     landmarks = predictor(image, face)
-    #     for n in range(0, 68):
-    #         x = landmarks.part(n).x
-    #         y = landmarks.part(n).y
-    #         cv2.circle(image, (x, y), 4, (255, 0, 0), -1)
+    faces = detector(img)
+    for face in faces:
+        x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
+        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), thickness=2)
+
+        landmarks = predictor(img, face)
+        tlandmark = shape_to_np(landmarks)
+        # for n in range(0, 68):
+        #     x = landmarks.part(n).x
+        #     y = landmarks.part(n).y
+        #     cv2.circle(image, (x, y), 4, (255, 0, 0), -1)
+        for (sX, sY) in tlandmark:
+            cv2.circle(image, (sX, sY), 1, (255, 0, 0), -1)
     # image = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
     cv2.putText(image, 'FPS={:.1f} {:s}'.format(tfps, "      "),
                 (10, 460),
                 cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=8)
@@ -124,3 +140,4 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+
