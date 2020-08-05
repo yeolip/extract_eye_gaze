@@ -4,17 +4,22 @@ import dlib
 import numpy as np
 import eye_tracker_05 as eyeTrk   #detect 68 point
 
+PERPROMANCE_TEST = 0
+
+def timelap_check(title, start):
+    if(PERPROMANCE_TEST == 1):
+        print('\tTimeLap - {:s} {:.6f}'.format(title, time.time() - start))
+
 def shape_to_np(shape, dtype="int"):
 	# initialize the list of (x, y)-coordinates
 	coords = np.zeros((shape.num_parts, 2), dtype=dtype)
-
 	# loop over all facial landmarks and convert them
 	# to a 2-tuple of (x, y)-coordinates
 	for i in range(0, shape.num_parts):
 		coords[i] = (shape.part(i).x, shape.part(i).y)
-
 	# return the list of (x, y)-coordinates
 	return coords
+
 
 cap = cv2.VideoCapture(0)
 time.sleep(2) #warming up
@@ -52,9 +57,9 @@ faceModel3D[6] = [ 3.5,  0.,  -1. ]
 # predictor_path = "./dlib/eye_predictor.dat"
 predictor_path = "./dlib/type1_21_facefull.dat"
 
-objEyeTrack = eyeTrk.eyeTracker()
+objEyeTrack = eyeTrk.eyeTracker(predictor_path)
 objEyeTrack.initilaize_calib(tcameraMatrix, tdistCoeffs)
-objEyeTrack.initilaize_training_path(predictor_path)
+# objEyeTrack.initilaize_training_path(predictor_path)
 # objEyeTrack.initialize_p3dmodel(faceModel3D)
 
 tcnt = 1
@@ -79,15 +84,25 @@ while True:
 
     # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     if not ret:
         break
 
+    time_s = time.time()
     tempWidth = 120
     available = objEyeTrack.preprocess(img, (160-tempWidth,120-tempWidth,400+tempWidth,340+tempWidth))
     # available = objEyeTrack.preprocess(img, (0,0, 640 , 480))
+    timelap_check('1.detect face ', time_s)
+
     if(available > 0 ):
-        objEyeTrack.temp_run(image, img, gazeType=viewType )
-        objEyeTrack.randering(image)
+        time_s = time.time()
+        objEyeTrack.algo_run(img, tSelect=viewType )
+        timelap_check('2.calc eye gaze ', time_s)
+
+        time_s = time.time()
+        objEyeTrack.rendering(image, tSelect=viewType )
+        timelap_check('3.rendering ', time_s)
+
 
     # faces = detector(img)
     # for face in faces:
@@ -104,12 +119,14 @@ while True:
     #         cv2.circle(image, (sX, sY), 1, (255, 0, 0), -1)
     # # image = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
-    cv2.putText(image, 'FPS={:.1f} {:s}'.format(tfps, "      "),
-                (10, 460),
-                cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=8)
     if (ttimecount >= FRAME_REPEAT):
         tfps = ttimecount / (time.time() - starttime)
         ttimecount = 0
+
+    cv2.putText(image, 'FPS={:.1f} {:s}'.format(tfps, "      "),
+                (10, 460),
+                cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=8)
+
 
     cv2.imshow('image', image)
 
@@ -142,6 +159,15 @@ while True:
             viewType -= 1000
         else:
             viewType += 1000
+    elif key == ord('0'):
+        if(viewType//10000%10==1):
+            viewType -= 10000
+        else:
+            viewType += 10000
+    elif key == ord('w'):
+        objEyeTrack.initilaize_training_path("./dlib/type1_21_facefull.dat")
+    elif key == ord('e'):
+        objEyeTrack.initilaize_training_path("./dlib/shape_predictor_68_face_landmarks.dat")
     # time.sleep(0.001)
 
 cap.release()
