@@ -16,12 +16,19 @@ C_L_MOUTH= 4
 C_R_EYE  = 5
 C_L_EYE  = 6
 
-#2d face mappint point sequence
+#2d face mappint point sequence - 68 point
 RIGHT_EYE = list(range(36, 42))  # 6
 LEFT_EYE = list(range(42, 48))  # 6
 NOSE = list(range(27, 36))  # 9
 MOUTH_OUTLINE = list(range(48, 60))
 MOUTH_INNER = list(range(60, 68))  # 나는 60번이 INNER로 보임
+
+#2d face mappint point sequence - 21 point
+RIGHT_EYE_MINI = list(range(3, 9))  # 6
+LEFT_EYE_MINI = list(range(9, 15))  # 6
+MOUTH_OUTLINE_MINI = list(range(15, 19))
+MOUTH_INNER_MINI = list(range(19, 21))  # 나는 60번이 INNER로 보임
+
 
 #eye open and repeat threshold
 # EYE_CLOSE_THRESH = 0.26
@@ -165,90 +172,148 @@ def calc_dist(p1, p2):
     return distance
 
 
-def analyseFace(img, detector, predictor, quality=1, offset=(0, 0)):
-    dets = detector(np.array(img), quality)
+def analyseFace(img, detector, predictor, quality=0, offset=(0, 0)):
+    dets = detector(img, quality)
     result = []
     result_other = []
+    train_type = 0
     for k, d in enumerate(dets):
         instantFacePOI = np.zeros((7, 2), dtype=np.float32)
         eyeCorners = np.zeros((2, 2, 2), dtype=np.float32)
 
         # Get the landmarks/parts for the face in box d.
-        shape = predictor(np.array(img), d)
-        # oreille droite
-        instantFacePOI[0][0] = shape.part(0).x + offset[0]
-        instantFacePOI[0][1] = shape.part(0).y + offset[1]
-        # oreille gauche
-        instantFacePOI[1][0] = shape.part(16).x + offset[0]
-        instantFacePOI[1][1] = shape.part(16).y + offset[1]
-        # nez
-        instantFacePOI[2][0] = shape.part(30).x + offset[0]
-        instantFacePOI[2][1] = shape.part(30).y + offset[1]
-        # bouche gauche
-        instantFacePOI[3][0] = shape.part(48).x + offset[0]
-        instantFacePOI[3][1] = shape.part(48).y + offset[1]
-        # bouche droite
-        instantFacePOI[4][0] = shape.part(54).x + offset[0]
-        instantFacePOI[4][1] = shape.part(54).y + offset[1]
+        shape = predictor(img, d)
+        train_type = shape.num_parts
 
-        leftEyeX = 0
-        leftEyeY = 0
-        # for i in range(36, 42):
-        #     leftEyeX += shape.part(i).x
-        #     leftEyeY += shape.part(i).y
-        # leftEyeX = int(leftEyeX / 6.0)
-        # leftEyeY = int(leftEyeY / 6.0)
-        for i in range(37, 42):
-            if(i == 39):
-                continue
-            leftEyeX += shape.part(i).x
-            leftEyeY += shape.part(i).y
-        leftEyeX = int(leftEyeX / 4.0)
-        leftEyeY = int(leftEyeY / 4.0)
-        eyeCorners[0][0] = [shape.part(36).x + offset[0], shape.part(36).y + offset[1]]
-        eyeCorners[0][1] = [shape.part(39).x + offset[0], shape.part(39).y + offset[1]]
+        if(shape.num_parts == 21):  #custom training
+            instantFacePOI[C_R_HEAR][0] = shape.part(0).x + offset[0]
+            instantFacePOI[C_R_HEAR][1] = shape.part(0).y + offset[1]
+            instantFacePOI[C_L_HEAR][0] = shape.part(1).x + offset[0]
+            instantFacePOI[C_L_HEAR][1] = shape.part(1).y + offset[1]
+            instantFacePOI[C_NOSE][0] = shape.part(2).x + offset[0]
+            instantFacePOI[C_NOSE][1] = shape.part(2).y + offset[1]
+            instantFacePOI[C_R_MOUTH][0] = shape.part(15).x + offset[0]
+            instantFacePOI[C_R_MOUTH][1] = shape.part(15).y + offset[1]
+            instantFacePOI[C_L_MOUTH][0] = shape.part(17).x + offset[0]
+            instantFacePOI[C_L_MOUTH][1] = shape.part(17).y + offset[1]
 
-        instantFacePOI[5][0] = leftEyeX + offset[0]
-        instantFacePOI[5][1] = leftEyeY + offset[1]
+            leftEyeX = 0
+            leftEyeY = 0
+            for i in range(3, 9):
+                if (i == 3 or i == 6):
+                    continue
+                leftEyeX += shape.part(i).x
+                leftEyeY += shape.part(i).y
+            leftEyeX = int(leftEyeX / 4.0)
+            leftEyeY = int(leftEyeY / 4.0)
+            eyeCorners[0][0] = [shape.part(3).x + offset[0], shape.part(3).y + offset[1]]
+            eyeCorners[0][1] = [shape.part(6).x + offset[0], shape.part(6).y + offset[1]]
+            instantFacePOI[C_R_EYE][0] = leftEyeX + offset[0]
+            instantFacePOI[C_R_EYE][1] = leftEyeY + offset[1]
+            rightEyeX = 0
+            rightEyeY = 0
+            for i in range(9, 15):
+                if (i == 9 or i == 12):
+                    continue
+                rightEyeX += shape.part(i).x
+                rightEyeY += shape.part(i).y
+            rightEyeX = int(rightEyeX / 4.0)
+            rightEyeY = int(rightEyeY / 4.0)
+            eyeCorners[1][0] = [shape.part(9).x + offset[0], shape.part(9).y + offset[1]]
+            eyeCorners[1][1] = [shape.part(12).x + offset[0], shape.part(12).y + offset[1]]
+            instantFacePOI[C_L_EYE][0] = rightEyeX + offset[0]
+            instantFacePOI[C_L_EYE][1] = rightEyeY + offset[1]
+            data = [instantFacePOI,
+                    (int(d.left() + offset[0]), int(d.top() + offset[1]), int(d.right() + offset[0]),int(d.bottom() + offset[1])),\
+                    eyeCorners]
+            result.append(data)
 
-        rightEyeX = 0
-        rightEyeY = 0
-        # for i in range(42, 48):
-        #     rightEyeX += shape.part(i).x
-        #     rightEyeY += shape.part(i).y
-        # rightEyeX = int(rightEyeX / 6.0)
-        # rightEyeY = int(rightEyeY / 6.0)
-        for i in range(43, 48):
-            if(i == 45):
-                continue
-            rightEyeX += shape.part(i).x
-            rightEyeY += shape.part(i).y
-        rightEyeX = int(rightEyeX / 4.0)
-        rightEyeY = int(rightEyeY / 4.0)
-        eyeCorners[1][0] = [shape.part(42).x + offset[0], shape.part(42).y + offset[1]]
-        eyeCorners[1][1] = [shape.part(45).x + offset[0], shape.part(45).y + offset[1]]
-        instantFacePOI[6][0] = rightEyeX + offset[0]
-        instantFacePOI[6][1] = rightEyeY + offset[1]
-        data = [instantFacePOI, (
-        int(d.left() + offset[0]), int(d.top() + offset[1]), int(d.right() + offset[0]), int(d.bottom() + offset[1])),
-                eyeCorners]
-        result.append(data)
+            p_lefteye = []
+            p_righteye = []
+            p_mouse_in = []
+            p_mouse_out = []
 
-        p_lefteye = []
-        p_righteye = []
-        p_mouse_in = []
-        p_mouse_out = []
+            p_lefteye.extend([[shape.part(t).x + offset[0], shape.part(t).y + offset[1]] for t in LEFT_EYE_MINI])
+            p_righteye.extend([[shape.part(t).x + offset[0], shape.part(t).y + offset[1]] for t in RIGHT_EYE_MINI])
+            p_mouse_out.extend([[shape.part(t).x + offset[0], shape.part(t).y + offset[1]] for t in MOUTH_OUTLINE_MINI])
+            p_mouse_in.extend([[shape.part(t).x + offset[0], shape.part(t).y + offset[1]] for t in MOUTH_INNER_MINI])
 
-        p_lefteye.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in LEFT_EYE])
-        p_righteye.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in RIGHT_EYE])
-        p_mouse_out.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in MOUTH_OUTLINE])
-        p_mouse_in.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in MOUTH_INNER])
+            result_other.append([p_lefteye, p_righteye, p_mouse_in, p_mouse_out])
 
-        result_other.append([p_lefteye, p_righteye, p_mouse_in, p_mouse_out])
-        # print('result_other', result_other)
+        else:
+            # oreille droite
+            instantFacePOI[C_R_HEAR][0] = shape.part(0).x + offset[0]
+            instantFacePOI[C_R_HEAR][1] = shape.part(0).y + offset[1]
+            # oreille gauche
+            instantFacePOI[C_L_HEAR][0] = shape.part(16).x + offset[0]
+            instantFacePOI[C_L_HEAR][1] = shape.part(16).y + offset[1]
+            # nez
+            instantFacePOI[C_NOSE][0] = shape.part(30).x + offset[0]
+            instantFacePOI[C_NOSE][1] = shape.part(30).y + offset[1]
+            # bouche gauche
+            instantFacePOI[C_R_MOUTH][0] = shape.part(48).x + offset[0]
+            instantFacePOI[C_R_MOUTH][1] = shape.part(48).y + offset[1]
+            # bouche droite
+            instantFacePOI[C_L_MOUTH][0] = shape.part(54).x + offset[0]
+            instantFacePOI[C_L_MOUTH][1] = shape.part(54).y + offset[1]
 
-    return result, result_other
+            leftEyeX = 0
+            leftEyeY = 0
+            # for i in range(36, 42):
+            #     leftEyeX += shape.part(i).x
+            #     leftEyeY += shape.part(i).y
+            # leftEyeX = int(leftEyeX / 6.0)
+            # leftEyeY = int(leftEyeY / 6.0)
+            for i in range(37, 42):
+                if(i == 39):
+                    continue
+                leftEyeX += shape.part(i).x
+                leftEyeY += shape.part(i).y
+            leftEyeX = int(leftEyeX / 4.0)
+            leftEyeY = int(leftEyeY / 4.0)
+            eyeCorners[0][0] = [shape.part(36).x + offset[0], shape.part(36).y + offset[1]]
+            eyeCorners[0][1] = [shape.part(39).x + offset[0], shape.part(39).y + offset[1]]
 
+            instantFacePOI[C_R_EYE][0] = leftEyeX + offset[0]
+            instantFacePOI[C_R_EYE][1] = leftEyeY + offset[1]
+
+            rightEyeX = 0
+            rightEyeY = 0
+            # for i in range(42, 48):
+            #     rightEyeX += shape.part(i).x
+            #     rightEyeY += shape.part(i).y
+            # rightEyeX = int(rightEyeX / 6.0)
+            # rightEyeY = int(rightEyeY / 6.0)
+            for i in range(43, 48):
+                if(i == 45):
+                    continue
+                rightEyeX += shape.part(i).x
+                rightEyeY += shape.part(i).y
+            rightEyeX = int(rightEyeX / 4.0)
+            rightEyeY = int(rightEyeY / 4.0)
+            eyeCorners[1][0] = [shape.part(42).x + offset[0], shape.part(42).y + offset[1]]
+            eyeCorners[1][1] = [shape.part(45).x + offset[0], shape.part(45).y + offset[1]]
+            instantFacePOI[C_L_EYE][0] = rightEyeX + offset[0]
+            instantFacePOI[C_L_EYE][1] = rightEyeY + offset[1]
+            data = [instantFacePOI, (
+            int(d.left() + offset[0]), int(d.top() + offset[1]), int(d.right() + offset[0]), int(d.bottom() + offset[1])),
+                    eyeCorners]
+            result.append(data)
+
+            p_lefteye = []
+            p_righteye = []
+            p_mouse_in = []
+            p_mouse_out = []
+
+            p_lefteye.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in LEFT_EYE])
+            p_righteye.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in RIGHT_EYE])
+            p_mouse_out.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in MOUTH_OUTLINE])
+            p_mouse_in.extend([[shape.part(t).x +offset[0], shape.part(t).y+ offset[1]] for t in MOUTH_INNER])
+
+            result_other.append([p_lefteye, p_righteye, p_mouse_in, p_mouse_out])
+            # print('result_other', result_other)
+
+    return result, result_other, train_type
 
 def computeGradient(img):
     # out2 = cv2.Sobel(img,cv2.CV_8U,1,0,ksize=5)
@@ -677,11 +742,17 @@ class eyeTracker(object):
         tD = np.zeros((5,1))
         self.initilaize_calib(tK, tD)
         self.initialize_p3dmodel(ThreeDFacePOI2)
-        predictor_path = './dlib/shape_predictor_68_face_landmarks.dat'
+        self.initilaize_training_path('./dlib/shape_predictor_68_face_landmarks.dat')
+        pass
+
+    def initilaize_training_path(self, predictor_path):
+        # predictor_path = './dlib/shape_predictor_68_face_landmarks.dat'
+        # predictor_path = './dlib/shape_predictor_5_face_landmarks.dat'
+        # face_rec_model_path = './dlib/dlib_face_recognition_resnet_model_v1.dat'
 
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(predictor_path)
-        pass
+        # self.facerec = dlib.face_recognition_model_v1(face_rec_model_path)
 
     def initilaize_calib(self, tCameraMatrix, tDistCoeffs):
         # cameraMatrix = np.eye(3)  # A checker en fct de l'optique choisie
@@ -717,9 +788,11 @@ class eyeTracker(object):
         cropImage = image[ int(max(y , 0)):int(max(y + h, 0)),
                            int(max(x , 0)):int(max(x + w, 0))]
 
-        self.faces_data, self.other_data = analyseFace(cropImage, self.detector, self.predictor, offset=(x,y))
+        self.faces_data, self.other_data, self.train_type = analyseFace(cropImage, self.detector, self.predictor, offset=(x,y))
         if(len(self.faces_data)):
             print("# of detected : {:d} person".format(len(self.faces_data)))
+        #     print(self.faces_data)
+        # return 0
         return len(self.faces_data)
 
     def temp_run(self, image, gray, gazeType=0):
@@ -999,6 +1072,21 @@ class eyeTracker(object):
 
         # print("tmouth_in",tmouth_in)
         # print("tmouth_out",tmouth_out)
+        if(self.train_type ==21):
+            p51 = tmouth_out[1]
+            p62 = tmouth_in[0]
+            p66 = tmouth_in[1]
+            B = calc_dist(p51, p62)
+            E = calc_dist(p66, p62)
+            if ((B) < (E)):
+                ttext = "Open"
+                tstatus = RET_OPEN
+            else:
+                ttext = "Close"
+                tstatus = RET_CLOSE
+
+            return tstatus, ttext
+
         p50 = tmouth_out[2]
         p51 = tmouth_out[3]
         p52 = tmouth_out[4]
@@ -1051,6 +1139,39 @@ class eyeTracker(object):
             self.EyeCloseCounter = 0
             # ALARM_ON = False
 
+    def analyseFace_otherTrain(self, img, detector, predictor, quality=1, offset=(0, 0)):
+        dets = detector(np.array(img), quality)
+        result = []
+        result_other = []
+        for k, d in enumerate(dets):
+            instantFacePOI = np.zeros((7, 2), dtype=np.float32)
+            eyeCorners = np.zeros((2, 2, 2), dtype=np.float32)
+
+            # Get the landmarks/parts for the face in box d.
+            shape = predictor(np.array(img), d)
+            train_type = shape.num_parts
+
+            # Compute the 128D vector that describes the face in img identified by
+            # shape.
+            face_descriptor = self.facerec.compute_face_descriptor(img, shape)
+            descriptors.append(face_descriptor)
+            images.append((img, shape))
+
+            data = [instantFacePOI, (
+            int(d.left() + offset[0]), int(d.top() + offset[1]), int(d.right() + offset[0]), int(d.bottom() + offset[1])),
+                    eyeCorners]
+            result.append(data)
+
+            p_lefteye = []
+            p_righteye = []
+            p_mouse_in = []
+            p_mouse_out = []
+
+            result_other.append([p_lefteye, p_righteye, p_mouse_in, p_mouse_out])
+
+            # print('result_other', result_other)
+        return result, result_other, train_type
+
 if __name__ == '__main__':
     distCoeffs = np.zeros((5, 1))
     # HARDCODED CAM PARAMS
@@ -1065,7 +1186,7 @@ if __name__ == '__main__':
     cameraMatrix = np.array([[maxSize, 0, width / 2.0], [0, maxSize, height / 2.0], [0, 0, 1]], np.float32)
 
     # TEST PICTURE
-    img = cv2.imread('ellipse_eye_white_left_cam.png')
+    img = cv2.imread('./sample/ellipse_eye_white_left_cam.png')
     # img = cv2.imread('s_DSC05310.JPG')
     # img = cv2.imread('test2.png')
     # ellipse_eye_black_right_cam.png
@@ -1131,12 +1252,12 @@ if __name__ == '__main__':
 
 
     # Model for face detect
-    predictor_path = './shape_predictor_68_face_landmarks.dat'
+    predictor_path = './dlib/shape_predictor_68_face_landmarks.dat'
 
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(predictor_path)
 
-    faces_data, _ = analyseFace(test, detector, predictor)
+    faces_data, _ , _ = analyseFace(test, detector, predictor)
     print(len(faces_data))
     # print(faces_data)
 
