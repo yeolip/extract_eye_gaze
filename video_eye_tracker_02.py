@@ -22,7 +22,8 @@ def shape_to_np(shape, dtype="int"):
 
 
 cap = cv2.VideoCapture(0)
-time.sleep(2) #warming up
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 3);
+time.sleep(1) #warming up
 if not cap.isOpened():
   exit()
 
@@ -81,12 +82,15 @@ while True:
 
     # if(ttimecount%2 == 0):
     #     continue
+    # if ((ttimecount % 4 == 0) or (ttimecount % 4 == 1) or (ttimecount % 4 == 2)):
+    #     continue
 
     # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     if not ret:
         break
+    print('ret', ret)
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     time_s = time.time()
     tempWidth = 120

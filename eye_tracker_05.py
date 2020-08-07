@@ -48,9 +48,9 @@ RET_CLOSE  = 3
 degreeToRadian = math.pi/180
 radianToDegree = 180/math.pi
 
-kGradientThreshold = 10.0
-kWeightBlurSize = 5;
-maxEyeSize = 10;
+kGradientThreshold = 5.0
+kWeightBlurSize = 3;
+maxEyeSize = 8;
 
 # SOLVER FOR PNP
 cameraMatrix = np.eye(3)  # A checker en fct de l'optique choisie
@@ -373,6 +373,9 @@ def findEyeCenter(eyeImage, offset):
     if (eyeImg.shape[0] > maxEyeSize or eyeImg.shape[1] > maxEyeSize):
         scaleValue = max(maxEyeSize / float(eyeImg.shape[0]), maxEyeSize / float(eyeImg.shape[1]))
         eyeImg = cv2.resize(eyeImg, None, fx=scaleValue, fy=scaleValue, interpolation=cv2.INTER_AREA)
+
+    eyeImage = cv2.equalizeHist(eyeImage)
+    # eyeImage = cv2.GaussianBlur(eyeImage, (3,3), 0)
 
     gradientX = computeGradient(eyeImg)
     gradientY = np.transpose(computeGradient(np.transpose(eyeImg)))
