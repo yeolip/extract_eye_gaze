@@ -36,6 +36,23 @@ theight = 480
 tmaxSize = max(twidth, theight)
 tcameraMatrix = np.array([[tmaxSize, 0, twidth / 2.0], [0, tmaxSize, theight / 2.0], [0, 0, 1]], np.float32)
 
+
+def select_camera_calib(num):
+    tempDistCoeffs = np.zeros((5, 1))
+    tempCameraMatrix = np.eye(3)
+
+    if (num == 1):
+        tempDistCoeffs[0][0] = -0.015136023194323986
+        tempDistCoeffs[1][0] = 0.2177351340933552
+        tempDistCoeffs[2][0] = 0.0025235154109215703
+        tempDistCoeffs[3][0] = 0.0022730661434222452
+        tempDistCoeffs[4][0] = -0.7167190677252845
+        tempCameraMatrix[0][0] = 641.8333531354511
+        tempCameraMatrix[1][1] = 641.8333531354511
+        tempCameraMatrix[0][2] = 309.4109382434117
+        tempCameraMatrix[1][2] = 258.82858265848694
+        # print(tempDistCoeffs, tempCameraMatrix)
+    return tempCameraMatrix, tempDistCoeffs
 #set 3d face model
 faceModel3D = np.zeros((7, 3), dtype=np.float32)
 # RIGHTHEAR
@@ -59,6 +76,7 @@ faceModel3D[6] = [ 3.5,  0.,  -1. ]
 predictor_path = "./dlib/type1_21_facefull.dat"
 
 objEyeTrack = eyeTrk.eyeTracker(predictor_path)
+tcameraMatrix, tdistCoeffs = select_camera_calib(1)
 objEyeTrack.initilaize_calib(tcameraMatrix, tdistCoeffs)
 # objEyeTrack.initilaize_training_path(predictor_path)
 # objEyeTrack.initialize_p3dmodel(faceModel3D)

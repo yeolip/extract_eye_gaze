@@ -47,14 +47,17 @@ faceModel3D[5] = [-3.5,  0.,  -1. ]
 # LEFTEYE
 faceModel3D[6] = [ 3.5,  0.,  -1. ]
 
-objEyeTrack = eyeTrk.eyeTracker()
+predictor_path = "./dlib/eye_predictor.dat"
+
+objEyeTrack = eyeTrk.eyeTracker(predictor_path)
 objEyeTrack.initilaize_calib(tcameraMatrix, tdistCoeffs)
 # objEyeTrack.initialize_p3dmodel(faceModel3D)
 
 tcnt = 1
 detector = dlib.get_frontal_face_detector()
 # predictor = dlib.shape_predictor("./dlib/shape_predictor_68_face_landmarks.dat")
-predictor = dlib.shape_predictor("./dlib/type2mini.dat")
+predictor = dlib.shape_predictor("./dlib/type2_19_facemini.dat")
+# predictor = dlib.shape_predictor("./dlib/type2_19_facemini.dat")
 
 ttimecount = 0
 FRAME_REPEAT = 30
@@ -136,6 +139,14 @@ while True:
             viewType -= 1000
         else:
             viewType += 1000
+    elif key == ord('w'):
+        predictor = dlib.shape_predictor("./dlib/type1_21_facefull.dat")
+    elif key == ord('e'):
+        predictor = dlib.shape_predictor("./dlib/shape_predictor_68_face_landmarks.dat")
+    elif key == ord('r'):
+        predictor = dlib.shape_predictor("./dlib/type2_19_facemini.dat")
+    elif key == ord('t'):
+        predictor = dlib.shape_predictor("./dlib/eye_predictor.dat")
     # time.sleep(0.001)
 
 cap.release()

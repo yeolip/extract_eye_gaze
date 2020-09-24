@@ -367,15 +367,17 @@ def findEyeCenter(eyeImage, offset):
     if (int(eyeImage.size / (eyeImage.shape[0] * (eyeImage.shape[1]))) == 3):
         eyeImg = np.asarray(cv2.cvtColor(eyeImage, cv2.COLOR_BGR2GRAY))
     else:
-        eyeImg = eyeImage  #.copy()
+        eyeImg = eyeImage.copy()  #.copy()
     eyeImg = eyeImg.astype(np.float32)
     scaleValue = 1.0;
     if (eyeImg.shape[0] > maxEyeSize or eyeImg.shape[1] > maxEyeSize):
         scaleValue = max(maxEyeSize / float(eyeImg.shape[0]), maxEyeSize / float(eyeImg.shape[1]))
         eyeImg = cv2.resize(eyeImg, None, fx=scaleValue, fy=scaleValue, interpolation=cv2.INTER_AREA)
 
-    eyeImage = cv2.equalizeHist(eyeImage)
-    # eyeImage = cv2.GaussianBlur(eyeImage, (3,3), 0)
+    # img_int8 = img.astype(np.uint8)
+    # eyeImg = eyeImg.astype(np.uint8)
+    # eyeImg = cv2.equalizeHist(eyeImg)
+    # eyeImg = cv2.GaussianBlur(eyeImg, (3,3), 0)
 
     gradientX = computeGradient(eyeImg)
     gradientY = np.transpose(computeGradient(np.transpose(eyeImg)))
@@ -795,6 +797,7 @@ class eyeTracker(object):
         # distCoeffs = np.zeros((5, 1))
         self.cameraMatrix = tCameraMatrix
         self.distCoeffs = tDistCoeffs
+        print(cameraMatrix, distCoeffs)
         pass
 
     def initialize_p3dmodel(self, paramPOI):
