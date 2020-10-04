@@ -1,3 +1,5 @@
+import queue as queue
+import threading
 import cv2
 import time
 import dlib
@@ -11,23 +13,53 @@ def timelap_check(title, start):
         print('\tTimeLap - {:s} {:.6f}'.format(title, time.time() - start))
 
 def shape_to_np(shape, dtype="int"):
-	# initialize the list of (x, y)-coordinates
-	coords = np.zeros((shape.num_parts, 2), dtype=dtype)
-	# loop over all facial landmarks and convert them
-	# to a 2-tuple of (x, y)-coordinates
-	for i in range(0, shape.num_parts):
-		coords[i] = (shape.part(i).x, shape.part(i).y)
-	# return the list of (x, y)-coordinates
-	return coords
+    # initialize the list of (x, y)-coordinates
+    coords = np.zeros((shape.num_parts, 2), dtype=dtype)
+    # loop over all facial landmarks and convert them
+    # to a 2-tuple of (x, y)-coordinates
+    for i in range(0, shape.num_parts):
+        coords[i] = (shape.part(i).x, shape.part(i).y)
+    # return the list of (x, y)-coordinates
+    return coords
 
+# bufferless VideoCapture
+class VideoCapture:
+    def __init__(self, name):
+        self.cap = cv2.VideoCapture(name, cv2.CAP_DSHOW)
+        self.q = queue.Queue(maxsize=1)
+        t = threading.Thread(target=self._reader)
+        t.daemon = True
+        t.start()
 
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-cap.set(cv2.CAP_PROP_BUFFERSIZE, 3);
-cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
-time.sleep(1) #warming up
-if not cap.isOpened():
-  exit()
+    # read frames as soon as they are available, keeping only most recent one
+    def _reader(self):
+        while True:
+          ret, frame = self.cap.read()
+          if not ret:
+            break
+          if not self.q.empty():
+            try:
+              self.q.get_nowait()   # discard previous (unprocessed) frame
+            except Queue.Empty:
+              pass
+          self.q.put(frame)
+
+    def read(self):
+        return True, self.q.get()
+
+    def retrieve(self):
+        return self.cap.retrieve()
+
+    def release(self):
+        return self.cap.release()
+
+# cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+# cap.set(cv2.CAP_PROP_BUFFERSIZE, 3);
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
+# time.sleep(1) #warming up
+# if not cap.isOpened():
+#   exit()
 
 
 
@@ -94,12 +126,21 @@ tfps = 30
 available = 0
 viewType = 0
 
+cap = VideoCapture(0)
+# while True:
+  # frame = cap.read()
+  # time.sleep(.5)   # simulate long processing
+  # cv2.imshow("frame", frame)
+  # if chr(cv2.waitKey(1)&255) == 'q':
+  #   break
+
 while True:
     if(ttimecount == 0):
         starttime = time.time()
     ttimecount += 1
     cap.retrieve()
     ret, image = cap.read()
+    # image = cap.read()
 
     # if(ttimecount%2 == 0):
     #     continue
@@ -108,9 +149,9 @@ while True:
 
     # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    if not ret:
-        break
-    print('ret', ret)
+    # if not ret:
+    #     break
+    # print('ret', ret)
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     time_s = time.time()

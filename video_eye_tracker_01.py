@@ -69,6 +69,7 @@ while True:
     if(ttimecount == 0):
         starttime = time.time()
     ttimecount += 1
+    cap.retrieve()
     ret, image = cap.read()
 
     # if(ttimecount%2 == 0):
