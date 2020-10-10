@@ -108,9 +108,10 @@ while True:
 
     # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    if not ret:
-        break
-    print('ret', ret)
+    # if not ret:
+    #     print("Can't read frame")
+    #     break
+    # print('ret', ret)
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     time_s = time.time()

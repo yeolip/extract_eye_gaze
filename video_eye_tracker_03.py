@@ -26,6 +26,9 @@ def shape_to_np(shape, dtype="int"):
 class VideoCapture:
     def __init__(self, name):
         self.cap = cv2.VideoCapture(name, cv2.CAP_DSHOW)
+        # self.cap.open(name, cv2.CAP_DSHOW)
+        if not self.cap.isOpened():
+            exit()
         self.q = queue.Queue(maxsize=1)
         t = threading.Thread(target=self._reader)
         t.daemon = True
@@ -127,6 +130,8 @@ available = 0
 viewType = 0
 
 cap = VideoCapture(0)
+# cap.release()
+# cap = VideoCapture(0)
 # while True:
   # frame = cap.read()
   # time.sleep(.5)   # simulate long processing
@@ -150,6 +155,7 @@ while True:
     # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     # if not ret:
+    #     print("Can't read frame")
     #     break
     # print('ret', ret)
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
