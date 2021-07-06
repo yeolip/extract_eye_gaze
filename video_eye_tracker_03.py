@@ -4,7 +4,7 @@ import cv2
 import time
 import dlib
 import numpy as np
-import eye_tracker_05 as eyeTrk   #detect 68 point
+import eye_tracker_06 as eyeTrk   #detect 68 point
 
 PERPROMANCE_TEST = 0
 
