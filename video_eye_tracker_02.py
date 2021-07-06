@@ -58,15 +58,15 @@ def select_camera_calib(num):
 #set 3d face model
 faceModel3D = np.zeros((7, 3), dtype=np.float32)
 # RIGHTHEAR
-faceModel3D[0] = [-6.,   0.,  -8. ]
+faceModel3D[0] = [-7.5,   0.,  -8. ]
 # LEFTHEAR
-faceModel3D[1] = [ 6.,   0.,  -8. ]
+faceModel3D[1] = [ 7.5,   0.,  -8. ]
 # NOSE
-faceModel3D[2] =  [ 0.,   4.,   2.5]
+faceModel3D[2] =  [ 0.,  3.5,   2.5]
 # RIGHTMOUTH
-faceModel3D[3] = [-5.,   8.,   0. ]
+faceModel3D[3] = [-3.,   6.,   0. ]
 # LEFTMOUTH
-faceModel3D[4] = [ 5.,   8.,   0. ]
+faceModel3D[4] = [ 3.,   6.,   0. ]
 # RIGHTEYE
 faceModel3D[5] = [-3.5,  0.,  -1. ]
 # LEFTEYE
