@@ -168,7 +168,7 @@ while True:
 
     if(available > 0 ):
         time_s = time.time()
-        objEyeTrack.algo_run(img, tSelect=viewType )
+        objEyeTrack.algo_run_ext(img, tSelect=viewType )
         timelap_check('2.calc eye gaze ', time_s)
 
         time_s = time.time()

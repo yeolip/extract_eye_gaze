@@ -7,6 +7,7 @@ import dlib
 import cv2
 import operator
 import time
+from PupilDetector2 import GradientIntersect
 
 #3d face model point index
 C_R_HEAR = 0
@@ -120,6 +121,10 @@ ThreeDFacePOI2[C_L_EYE, 1] = 0
 ThreeDFacePOI2[C_L_EYE, 2] = -1
 
 PERPROMANCE_TEST = 1
+
+# declare external func
+gi = GradientIntersect()
+
 
 def timelap_check(title, start):
     if(PERPROMANCE_TEST == 1):
@@ -494,6 +499,36 @@ def getEyePos2(corners, img, left_or_right=0):
     return [findEyeCenter(croppedImage, [scalesrect[0], scalesrect[1]]), corners[choosen]]
 
 
+def getEyePos3(corners, img, left_or_right=0):
+    scaleValue = 1.2
+    # here we don't need both but the biggest one
+    eyes = getEyePOI(corners)
+    # print('corners', corners, '\neyes', eyes)
+    if(left_or_right == 0):
+        choosen = 0
+        eyeToConsider = eyes[0]
+    elif(left_or_right == 1):
+        choosen = 1
+        eyeToConsider = eyes[1]
+    else:
+        assert(1)
+
+    scalesrect = scale(eyeToConsider, scaleValue)
+    croppedImage = img[
+                   int(max(scalesrect[1], 0)):int(max(scalesrect[3], 0)),
+                   int(max(scalesrect[0], 0)):int(max(scalesrect[2], 0))
+                   ]
+
+    loc_l = gi.locate(croppedImage)
+    maxcoord = (int(loc_l[1] / scaleValue), int(loc_l[0] / scaleValue))
+    # return [t, corners[choosen] ]
+    ret = tuple(map(operator.add, maxcoord, [scalesrect[0], scalesrect[1]]))
+    print('&&&&&&&&&&&&&&&&&&', scalesrect[0], scalesrect[1], '***', maxcoord)
+    return [ret, corners[choosen]]
+    # return [findEyeCenter(croppedImage, [scalesrect[0], scalesrect[1]]), corners[choosen]]
+
+
+
 #############
 def sub_eyecenter_and_pupilcenter(tFacePOI, pupilcenter, cameraMatrix, tproj_matrix):
     print("//////////sub_eyecenter_and_pupilcenter")
@@ -835,6 +870,7 @@ class eyeTracker(object):
         self.mViewpoint_2d_r = []
         self.mVpoint_2d_l = []
         self.mVpoint_2d_r = []
+
         pass
 
     def initilaize_training_path(self, predictor_path):
@@ -941,6 +977,83 @@ class eyeTracker(object):
             if (tSelect // 100 % 10 == 1):
                 time_s = time.time()
                 #Left eye gaze - method one
+                tViewpoint_2d_l = self.getEyeGaze_method_one(self.mEye_centers_l[index], tR, tT)
+                self.mViewpoint_2d_l.append(tViewpoint_2d_l)
+                # print('tViewpoint_2d_l', tViewpoint_2d_l)
+
+                #Right eye gaze - method one
+                tViewpoint_2d_r = self.getEyeGaze_method_one(self.mEye_centers_r[index], tR, tT)
+                self.mViewpoint_2d_r.append(tViewpoint_2d_r)
+                # print('tViewpoint_2d_r', tViewpoint_2d_r)
+                timelap_check('2-5.eye gaze - method one ', time_s)
+
+            if (tSelect // 1000 % 10 == 1):
+                time_s = time.time()
+                tpoint_2d_l = self.getEyeGaze_method_two_EyeModel(self.mEye_centers_l[index], tR, tT, self.ref_p3dmodel[C_L_EYE], POI[0][C_L_EYE], k=1.31, k0 =0.53 )
+                self.mVpoint_2d_l.append(tpoint_2d_l)
+
+                tpoint_2d_r = self.getEyeGaze_method_two_EyeModel(self.mEye_centers_r[index], tR, tT, self.ref_p3dmodel[C_R_EYE], POI[0][C_R_EYE], k=1.31, k0 =0.53 )
+                self.mVpoint_2d_r.append(tpoint_2d_r)
+                timelap_check('2-6.eye gaze - method two ', time_s)
+
+        pass
+
+    def algo_run_ext(self, gray, tSelect=0):
+        self.mEye_centers_r = []
+        self.mEye_centers_l = []
+        self.mRT = []
+        self.mEularAngle = []
+        self.mLandmark_2d = []
+        self.mEyeballgaze_l=[]
+        self.mEyeballgaze_r = []
+        self.mViewpoint_2d_l = []
+        self.mViewpoint_2d_r = []
+        self.mVpoint_2d_l = []
+        self.mVpoint_2d_r = []
+        for index, POI in enumerate(self.faces_eye):
+            # print('\nindex', index, '\nPOI', POI)
+            # print(eye_corners.shape)
+
+            time_s = time.time()
+            eye_corners = POI[2]
+            #Right eye
+            eye_center_point_r = getEyePos3(eye_corners, gray, 0)
+            self.mEye_centers_r.append(eye_center_point_r)
+            print('mEye_centers_r', self.mEye_centers_r)
+            #Left eye
+            eye_center_point_l = getEyePos3(eye_corners, gray, 1)
+            self.mEye_centers_l.append(eye_center_point_l)
+            timelap_check('2-1.mEye_centers ', time_s)
+
+            time_s = time.time()
+            tR, tT, eulerAngle_degree = self.getWorldCoordFromFace(self.ref_p3dmodel, POI[0], self.cameraMatrix, self.distCoeffs)
+            self.mRT.append([tR,tT])
+            self.mEularAngle.append(eulerAngle_degree)
+            # print('tR',tR,'tT',tT)
+            timelap_check('2-2.RT ', time_s)
+
+            time_s = time.time()
+            tlandmark_2d = self.getLandmark(self.ref_p3dmodel[C_NOSE], tR, tT)
+            self.mLandmark_2d.append(tlandmark_2d)
+            # print('tlandmark_2d',  tlandmark_2d[0][0], np.round(tlandmark_2d[1:4,-1]))
+            timelap_check('2-3.Landmark ', time_s)
+
+            if(tSelect//10%10 == 1):
+                time_s = time.time()
+                #Left eyeball gaze
+                eyeballgaze_l = self.getEyeballCenterGaze(self.ref_p3dmodel[C_L_EYE], tR, tT)
+                self.mEyeballgaze_l.append(eyeballgaze_l)
+                # print('eyeballgaze_l', eyeballgaze_l)
+
+                #Right eyeball gaze
+                eyeballgaze_r = self.getEyeballCenterGaze(self.ref_p3dmodel[C_R_EYE], tR, tT)
+                self.mEyeballgaze_r.append(eyeballgaze_r)
+                # print('eyeballgaze_r', eyeballgaze_r)
+                timelap_check('2-4.eyeball gaze ', time_s)
+
+            if (tSelect // 100 % 10 == 1):
+                time_s = time.time()
+                #Left eye gaze - method one
                 tViewpoint_2d_l = self.getEyeGaze_method_three(self.mEye_centers_l[index], tR, tT)
                 self.mViewpoint_2d_l.append(tViewpoint_2d_l)
                 # print('tViewpoint_2d_l', tViewpoint_2d_l)
@@ -961,7 +1074,6 @@ class eyeTracker(object):
                 timelap_check('2-6.eye gaze - method two ', time_s)
 
         pass
-
 
 
     def rendering(self, image, tSelect=0):

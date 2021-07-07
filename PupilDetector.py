@@ -37,6 +37,8 @@ available = 0
 viewType = 0
 loc = (0,0)
 
+gi_l = GradientIntersect()
+gi_r = GradientIntersect()
 while True:
     if(ttimecount == 0):
         starttime = time.time()
@@ -111,13 +113,13 @@ while True:
         clipping_gray_r = gray[ry:ry2, rx:rx2]
 
         if(available == 0):
-            gi_l = GradientIntersect()
+            # gi_l = GradientIntersect()
             loc_l = gi_l.locate(clipping_gray_l)
             print('loc_l', loc_l)
             cv2.circle(image, (int(lx + loc_l[1]), int(ly + loc_l[0])), 2, (0, 0, 255), -1)
             available = 0
 
-            gi_r = GradientIntersect()
+            # gi_r = GradientIntersect()
             loc_r = gi_r.locate(clipping_gray_r)
             print('loc_r', loc_r)
             cv2.circle(image, (int(rx + loc_r[1]), int(ry + loc_r[0])), 2, (0, 0, 255), -1)
@@ -125,9 +127,9 @@ while True:
             # cv2.imshow("result", clipping_gray)
             # cv2.waitKey(0)
         # elif(available == 1):
-        #     loc = gi.track(clipping_gray, loc)
-            # loc = gi.track(gray, (int(tx + loc[1]), int(ty + loc[0])))
-            # print('loc2',loc)
+            # loc_l = gi_l.track(clipping_gray_l, loc_l)
+            # loc_l = gi_l.track(gray, (int(lx + loc_l[1]), int(ly + loc_l[0])))
+            # print('loc2',loc_l)
     # image = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
     cv2.putText(image, 'FPS={:.1f} {:s}'.format(tfps, "      "),
