@@ -1010,6 +1010,8 @@ class eyeTracker(object):
         self.mViewpoint_2d_r = []
         self.mVpoint_2d_l = []
         self.mVpoint_2d_r = []
+        self.mViewpoint_2d_l_three = []
+        self.mViewpoint_2d_r_three = []
         for index, POI in enumerate(self.faces_eye):
             # print('\nindex', index, '\nPOI', POI)
             # print(eye_corners.shape)
@@ -1054,12 +1056,12 @@ class eyeTracker(object):
             if (tSelect // 100 % 10 == 1):
                 time_s = time.time()
                 #Left eye gaze - method one
-                tViewpoint_2d_l = self.getEyeGaze_method_three(self.mEye_centers_l[index], tR, tT)
+                tViewpoint_2d_l = self.getEyeGaze_method_one(self.mEye_centers_l[index], tR, tT)
                 self.mViewpoint_2d_l.append(tViewpoint_2d_l)
                 # print('tViewpoint_2d_l', tViewpoint_2d_l)
 
                 #Right eye gaze - method one
-                tViewpoint_2d_r = self.getEyeGaze_method_three(self.mEye_centers_r[index], tR, tT)
+                tViewpoint_2d_r = self.getEyeGaze_method_one(self.mEye_centers_r[index], tR, tT)
                 self.mViewpoint_2d_r.append(tViewpoint_2d_r)
                 # print('tViewpoint_2d_r', tViewpoint_2d_r)
                 timelap_check('2-5.eye gaze - method one ', time_s)
@@ -1073,6 +1075,18 @@ class eyeTracker(object):
                 self.mVpoint_2d_r.append(tpoint_2d_r)
                 timelap_check('2-6.eye gaze - method two ', time_s)
 
+            if (tSelect // 100000 % 10 == 1):
+                time_s = time.time()
+                #Left eye gaze - method one
+                tViewpoint_2d_l = self.getEyeGaze_method_three(self.mEye_centers_l[index], tR, tT)
+                self.mViewpoint_2d_l_three.append(tViewpoint_2d_l)
+                # print('tViewpoint_2d_l', tViewpoint_2d_l)
+
+                #Right eye gaze - method one
+                tViewpoint_2d_r = self.getEyeGaze_method_three(self.mEye_centers_r[index], tR, tT)
+                self.mViewpoint_2d_r_three.append(tViewpoint_2d_r)
+                # print('tViewpoint_2d_r', tViewpoint_2d_r)
+                timelap_check('2-5.eye gaze - method one ', time_s)
         pass
 
 
@@ -1121,19 +1135,32 @@ class eyeTracker(object):
             # Left/Right eye gaze - method one
             if (tSelect // 100 % 10 == 1):
                 cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
-                         (int(self.mEye_centers_l[index][0][0] + self.mViewpoint_2d_l[index][0]),
-                          int(self.mEye_centers_l[index][0][1] + self.mViewpoint_2d_l[index][1])),
+                         (int(self.mEye_centers_l[index][0][0] - self.mViewpoint_2d_l[index][0]),
+                          int(self.mEye_centers_l[index][0][1] - self.mViewpoint_2d_l[index][1])),
                          (255, 255, 0), 2, -1)
                 cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
-                         (int(self.mEye_centers_r[index][0][0] + self.mViewpoint_2d_r[index][0]),
-                          int(self.mEye_centers_r[index][0][1] + self.mViewpoint_2d_r[index][1])),
+                         (int(self.mEye_centers_r[index][0][0] - self.mViewpoint_2d_r[index][0]),
+                          int(self.mEye_centers_r[index][0][1] - self.mViewpoint_2d_r[index][1])),
                          (255, 255, 0), 2, -1)
 
+            # Left/Right eye gaze - method two
             if (tSelect // 1000 % 10 == 1):
                 cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
                          (int(self.mVpoint_2d_l[index][2][0][0]), int(self.mVpoint_2d_l[index][2][0][1])), (0, 255, 255), 2, -1)
                 cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
                          (int(self.mVpoint_2d_r[index][2][0][0]), int(self.mVpoint_2d_r[index][2][0][1])), (0, 255, 255), 2, -1)
+
+            # Left/Right eye gaze - method three
+            if (tSelect // 100000 % 10 == 1):
+                cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                         (int(self.mEye_centers_l[index][0][0] + self.mViewpoint_2d_l_three[index][0]),
+                          int(self.mEye_centers_l[index][0][1] + self.mViewpoint_2d_l_three[index][1])),
+                         (0, 140, 0), 2, -1)
+                cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                         (int(self.mEye_centers_r[index][0][0] + self.mViewpoint_2d_r_three[index][0]),
+                          int(self.mEye_centers_r[index][0][1] + self.mViewpoint_2d_r_three[index][1])),
+                         (0, 140, 0), 2, -1)
+
 
             if (tSelect // 10000 % 10 == 1):
                 for (sX, sY) in self.faces_point[index]:
@@ -1194,12 +1221,14 @@ class eyeTracker(object):
         rt, jacobian = cv2.Rodrigues(rvec)
         rot2 = rotMatFromEye(eyeData)
 
-        origin = [tvec[0][0], tvec[1][0], tvec[2][0]]
+        headPos = np.array([tvec[0][0], tvec[1][0], tvec[2][0]])
         headDir = np.dot(rot2, np.dot(rt, [0, 0, 1]))
-        camPlaneOrthVector = [0, 0, 1]
-        pointOnPlan = [0, 0, 0]
+        camPlaneOrthVector = np.array([0, 0, 1])
+        pointOnPlan = np.array([0, 0, 0])
 
-        tview_points = intersectionWithPlan(origin, headDir, camPlaneOrthVector, pointOnPlan)
+        tview_points = intersectionWithPlan(headPos, headDir, camPlaneOrthVector, pointOnPlan)
+        # tview_points = line_plane_collision(camPlaneOrthVector, pointOnPlan, headDir, headPos)
+
         print('tview_point', tview_points)
 
         return tview_points
@@ -1302,6 +1331,7 @@ class eyeTracker(object):
         camPlaneOrthVector = np.array([0, 0, 1])
         pointOnPlan = np.array([0, 0, 0])
 
+        # tview_points = intersectionWithPlan(headPos, headDir, camPlaneOrthVector, pointOnPlan)
         tview_points = line_plane_collision(camPlaneOrthVector, pointOnPlan, headDir, headPos)
 
         print('tview_point', tview_points)

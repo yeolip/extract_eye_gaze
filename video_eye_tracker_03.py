@@ -231,6 +231,11 @@ while True:
             viewType -= 1000
         else:
             viewType += 1000
+    elif key == ord('5'):
+        if(viewType//100000%10==1):
+            viewType -= 100000
+        else:
+            viewType += 100000
     elif key == ord('0'):
         if(viewType//10000%10==1):
             viewType -= 10000
