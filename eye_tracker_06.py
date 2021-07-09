@@ -871,6 +871,9 @@ class eyeTracker(object):
         self.mVpoint_2d_l = []
         self.mVpoint_2d_r = []
 
+        #algo_global_data
+        self.gEye_centers_r = []
+        self.gEye_centers_l = []
         pass
 
     def initilaize_training_path(self, predictor_path):
@@ -921,6 +924,48 @@ class eyeTracker(object):
         if(len(self.faces_eye)):
             print("# of detected : {:d} person".format(len(self.faces_eye)))
         return len(self.faces_eye)
+
+    #this algo should be ready both eye values. (algo do not support one detected eye)
+    def algo_ready(self, gray, availFrm):
+        ret_l = False
+        ret_r = False
+
+        self.mEye_centers_r = []
+        self.mEye_centers_l = []
+        for index, POI in enumerate(self.faces_eye):
+            # print('\nindex', index, '\nPOI', POI)
+            # print(eye_corners.shape)
+
+            # time_s = time.time()
+            eye_corners = POI[2]
+            #Right eye
+            eye_center_point_r = getEyePos3(eye_corners, gray, 0)
+            self.mEye_centers_r.append(eye_center_point_r)
+            print('mEye_centers_r', self.mEye_centers_r)
+            #Left eye
+            eye_center_point_l = getEyePos3(eye_corners, gray, 1)
+            self.mEye_centers_l.append(eye_center_point_l)
+            # timelap_check('2-1.mEye_centers ', time_s)
+        if(len(self.gEye_centers_r) < availFrm):
+            self.gEye_centers_r.append(self.mEye_centers_r)
+            if(len(self.gEye_centers_r) == availFrm):
+                ret_r = True
+        elif(len(self.gEye_centers_r) == availFrm):
+            self.gEye_centers_r.pop(0)
+            self.gEye_centers_r.append(self.mEye_centers_r)
+            ret_r = True
+
+        if(len(self.gEye_centers_l) < availFrm):
+            self.gEye_centers_l.append(self.mEye_centers_l)
+            if(len(self.gEye_centers_l) == availFrm):
+                ret_l = True
+        elif(len(self.gEye_centers_l) == availFrm):
+            self.gEye_centers_l.pop(0)
+            self.gEye_centers_l.append(self.mEye_centers_l)
+            ret_l = True
+
+        return ret_r, ret_l
+
 
     def algo_run(self, gray, tSelect=0):
         self.mEye_centers_r = []
