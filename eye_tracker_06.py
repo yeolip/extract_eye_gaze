@@ -8,6 +8,10 @@ import cv2
 import operator
 import time
 from PupilDetector2 import GradientIntersect
+# import low_pass_filter as set_param_low_pass_filter, low_pass_filter, test_use_previous_after_to_one_result
+# from low_pass_filter import set_param_low_pass_filter, low_pass_filter, test_use_previous_after_to_one_result
+
+from low_pass_filter import *
 
 #3d face model point index
 C_R_HEAR = 0
@@ -500,7 +504,7 @@ def getEyePos2(corners, img, left_or_right=0):
 
 
 def getEyePos3(corners, img, left_or_right=0):
-    scaleValue = 1.2
+    scaleValue = 1.0
     # here we don't need both but the biggest one
     eyes = getEyePOI(corners)
     # print('corners', corners, '\neyes', eyes)
@@ -559,6 +563,40 @@ def sub_eyecenter_and_pupilcenter(tFacePOI, pupilcenter, cameraMatrix, tproj_mat
 
     return np.subtract(b[0:-1,1], b[0:-1,0]), b
 def rotMatFromEye(eyeData):
+    # print eyeData
+    # eyeDiameter = eyeConst * Distance(eyeData[1][0], eyeData[1][1])
+    eyeCenter = ((eyeData[1][0][0] + eyeData[1][1][0]) / 2.0, (eyeData[1][0][1] + eyeData[1][1][1]) / 2.0)
+    eyePos = eyeData[0]
+    # HERE WE CONSTRUCT A MATRIX OF A BASE WHERE THE UNIT IS THE DIAMETER OF THE EYE AND AXIS OF THIS
+    mainEyeAxis = ((eyeData[1][0][0] - eyeData[1][1][0]), (eyeData[1][0][1] - eyeData[1][1][1]))
+    secondEyeAxis = perpendicular(mainEyeAxis)
+
+    reverseTransitionMatrix = (mainEyeAxis, secondEyeAxis)
+
+    transitionMatrix = np.linalg.inv(reverseTransitionMatrix)
+    print('transitionMatrix', transitionMatrix)
+    eyeCenterInEyeRef = np.dot(transitionMatrix, eyeCenter)
+    eyeCenterInEyeRef[1] = eyeCenterInEyeRef[1] + 0.2
+
+    eyePosInEyeRef = np.dot(transitionMatrix, eyePos)
+
+    eyeOffset = eyePosInEyeRef - eyeCenterInEyeRef
+
+    eyeOffset = [clamp(eyeOffset[0], -0.99, 0.99), clamp(eyeOffset[1], -0.99, 0.99)]
+    # Now we get the rotation values
+    thetay = np.arcsin(eyeOffset[0]) * eyeConst
+    thetax = np.arcsin(eyeOffset[1]) * eyeConst
+    print('각도', thetax*radianToDegree, thetay*radianToDegree)
+    print('변환    ',changeRotation_pitchyaw2unitvec('PYR',[thetax,thetay,0],'PYR'))
+    # Aaand the rotation matrix
+    rot = eulerAnglesToRotationMatrix([thetax, thetay, 0])
+    #pitch yaw roll순임
+
+    # print rot
+    return rot
+
+def rotMatFromEye2(eyeData):
+    eyeConst = 1.0
     # print eyeData
     # eyeDiameter = eyeConst * Distance(eyeData[1][0], eyeData[1][1])
     eyeCenter = ((eyeData[1][0][0] + eyeData[1][1][0]) / 2.0, (eyeData[1][0][1] + eyeData[1][1][1]) / 2.0)
@@ -912,6 +950,11 @@ class eyeTracker(object):
 
         self.ref_p3dmodel = paramPOI
 
+    def initilaize_data(self):
+        self.gEye_centers_r = []
+        self.gEye_centers_l = []
+        pass
+
     def preprocess(self, image, activeROI):
         x = activeROI[0]
         y = activeROI[1]
@@ -925,48 +968,6 @@ class eyeTracker(object):
             print("# of detected : {:d} person".format(len(self.faces_eye)))
         return len(self.faces_eye)
 
-    #this algo should be ready both eye values. (algo do not support one detected eye)
-    def algo_ready(self, gray, availFrm):
-        ret_l = False
-        ret_r = False
-
-        self.mEye_centers_r = []
-        self.mEye_centers_l = []
-        for index, POI in enumerate(self.faces_eye):
-            # print('\nindex', index, '\nPOI', POI)
-            # print(eye_corners.shape)
-
-            # time_s = time.time()
-            eye_corners = POI[2]
-            #Right eye
-            eye_center_point_r = getEyePos3(eye_corners, gray, 0)
-            self.mEye_centers_r.append(eye_center_point_r)
-            print('mEye_centers_r', self.mEye_centers_r)
-            #Left eye
-            eye_center_point_l = getEyePos3(eye_corners, gray, 1)
-            self.mEye_centers_l.append(eye_center_point_l)
-            # timelap_check('2-1.mEye_centers ', time_s)
-        if(len(self.gEye_centers_r) < availFrm):
-            self.gEye_centers_r.append(self.mEye_centers_r)
-            if(len(self.gEye_centers_r) == availFrm):
-                ret_r = True
-        elif(len(self.gEye_centers_r) == availFrm):
-            self.gEye_centers_r.pop(0)
-            self.gEye_centers_r.append(self.mEye_centers_r)
-            ret_r = True
-
-        if(len(self.gEye_centers_l) < availFrm):
-            self.gEye_centers_l.append(self.mEye_centers_l)
-            if(len(self.gEye_centers_l) == availFrm):
-                ret_l = True
-        elif(len(self.gEye_centers_l) == availFrm):
-            self.gEye_centers_l.pop(0)
-            self.gEye_centers_l.append(self.mEye_centers_l)
-            ret_l = True
-
-        return ret_r, ret_l
-
-
     def algo_run(self, gray, tSelect=0):
         self.mEye_centers_r = []
         self.mEye_centers_l = []
@@ -979,6 +980,8 @@ class eyeTracker(object):
         self.mViewpoint_2d_r = []
         self.mVpoint_2d_l = []
         self.mVpoint_2d_r = []
+        self.mViewpoint_2d_l_three = []
+        self.mViewpoint_2d_r_three = []
         for index, POI in enumerate(self.faces_eye):
             # print('\nindex', index, '\nPOI', POI)
             # print(eye_corners.shape)
@@ -986,10 +989,11 @@ class eyeTracker(object):
             time_s = time.time()
             eye_corners = POI[2]
             #Right eye
-            eye_center_point_r = getEyePos2(eye_corners, gray, 0)
+            eye_center_point_r = getEyePos3(eye_corners, gray, 0)
             self.mEye_centers_r.append(eye_center_point_r)
+            print('mEye_centers_r', self.mEye_centers_r)
             #Left eye
-            eye_center_point_l = getEyePos2(eye_corners, gray, 1)
+            eye_center_point_l = getEyePos3(eye_corners, gray, 1)
             self.mEye_centers_l.append(eye_center_point_l)
             timelap_check('2-1.mEye_centers ', time_s)
 
@@ -1041,11 +1045,173 @@ class eyeTracker(object):
                 self.mVpoint_2d_r.append(tpoint_2d_r)
                 timelap_check('2-6.eye gaze - method two ', time_s)
 
+            if (tSelect // 100000 % 10 == 1):
+                time_s = time.time()
+                #Left eye gaze - method one
+                tViewpoint_2d_l = self.getEyeGaze_method_three(self.mEye_centers_l[index], tR, tT)
+                self.mViewpoint_2d_l_three.append(tViewpoint_2d_l)
+                # print('tViewpoint_2d_l', tViewpoint_2d_l)
+
+                #Right eye gaze - method one
+                tViewpoint_2d_r = self.getEyeGaze_method_three(self.mEye_centers_r[index], tR, tT)
+                self.mViewpoint_2d_r_three.append(tViewpoint_2d_r)
+                # print('tViewpoint_2d_r', tViewpoint_2d_r)
+                timelap_check('2-5.eye gaze - method one ', time_s)
         pass
 
-    def algo_run_ext(self, gray, tSelect=0):
+    # this algo should be ready both eye values. (algo do not support one detected eye)
+    def algo_ready(self, gray, availFrm):
+        ret_l = False
+        ret_r = False
+
         self.mEye_centers_r = []
         self.mEye_centers_l = []
+        for index, POI in enumerate(self.faces_eye):
+            # print('\nindex', index, '\nPOI', POI)
+            # print(eye_corners.shape)
+
+            # time_s = time.time()
+            eye_corners = POI[2]
+            # Right eye
+            eye_center_point_r = getEyePos3(eye_corners, gray, 0)
+            self.mEye_centers_r.append(eye_center_point_r)
+            print('mEye_centers_r', self.mEye_centers_r)
+            # Left eye
+            eye_center_point_l = getEyePos3(eye_corners, gray, 1)
+            self.mEye_centers_l.append(eye_center_point_l)
+            # timelap_check('2-1.mEye_centers ', time_s)
+
+        if (len(self.gEye_centers_r) < availFrm):
+            self.gEye_centers_r.append(self.mEye_centers_r)
+            if (len(self.gEye_centers_r) == availFrm):
+                ret_r = True
+        elif (len(self.gEye_centers_r) == availFrm):
+            self.gEye_centers_r.pop(0)
+            self.gEye_centers_r.append(self.mEye_centers_r)
+            ret_r = True
+
+        if (len(self.gEye_centers_l) < availFrm):
+            self.gEye_centers_l.append(self.mEye_centers_l)
+            if (len(self.gEye_centers_l) == availFrm):
+                ret_l = True
+        elif (len(self.gEye_centers_l) == availFrm):
+            self.gEye_centers_l.pop(0)
+            self.gEye_centers_l.append(self.mEye_centers_l)
+            ret_l = True
+
+        if(ret_r == True and ret_l == True):
+            self.mEye_centers_r = self.get_pupil_center_with_LPF(self.gEye_centers_r, availFrm)
+            self.mEye_centers_l = self.get_pupil_center_with_LPF(self.gEye_centers_l, availFrm)
+            # self.get_pupil_center_with_LPF(self.gEye_centers_l)
+
+        return ret_r, ret_l
+
+    # def get_pupil_center_with_LPF(self, availFrm):
+
+    def get_pupil_center_with_LPF(self, buffer, availFrm):
+        # self.gEye_centers_l
+        # self.gEye_centers_r
+
+        # test2 = [
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+        #     [[(982.5, 395.0), [[975., 401.], [1000., 394.]]],
+        #      [(456.5, 358.5), [[442., 365.], [467., 367.]]]]
+        # ]
+
+        pupil_cen_x = []
+        pupil_cen_y = []
+        corner_l_pupil_x = []
+        corner_l_pupil_y = []
+        corner_r_pupil_x = []
+        corner_r_pupil_y = []
+
+        for idx, tdata in enumerate(buffer):
+            # print(idx, tdata)
+            print(buffer[idx])
+            tpupil_cen_x = []
+            tpupil_cen_y = []
+            tpupil_corner_l_x = []
+            tpupil_corner_l_y = []
+            tpupil_corner_r_x = []
+            tpupil_corner_r_y = []
+
+            for i, idata in enumerate(buffer[idx]):
+                print(i, idata)
+                print('----', idata[0], '-----', idata[1][0], idata[1][1])
+                tpupil_cen_x.append(idata[0][0])
+                tpupil_cen_y.append(idata[0][1])
+                # print('tpupil_cen_x', tpupil_cen_x)
+
+
+            pupil_cen_x.extend([tpupil_cen_x])
+            pupil_cen_y.extend([tpupil_cen_y])
+            # corner_l_pupil_x
+            # corner_l_pupil_y
+            # corner_r_pupil_x
+            # corner_r_pupil_y
+
+        print('pupil_cen_x', pupil_cen_x)
+        print('pupil_cen_y', pupil_cen_y)
+
+        # print(i)
+        localeye_centers = []
+
+        for e in range(i + 1):
+            print('lpupil_cen_x_np_{}_column={}'.format(e, np.array(pupil_cen_x)[:, e]))
+            print('lpupil_cen_y_np_{}_column={}'.format(e, np.array(pupil_cen_y)[:, e]))
+            print('center', np.average(np.array(pupil_cen_x)[:, e]), np.average(np.array(pupil_cen_y)[:, e]) )
+            print('pupil_corner', idata[1][0], idata[1][1])
+            print('pupil_corner_1', idata[1])
+            localeye_centers.append([(np.mean(np.array(pupil_cen_x)[:, e]), np.mean(np.array(pupil_cen_y)[:, e])),np.array(idata[1])])
+
+            # low_pass_filter
+            # ret_data_x = test_use_previous_to_one_result(np.array(lpupil_cen_x)[:, e],14)
+            # ret_data_y = test_use_previous_to_one_result(np.array(lpupil_cen_y)[:, e], 14)
+            # localeye_centers.append([(ret_data_x[14], ret_data_y[14]),np.array(idata[1])])
+            # localeye_centers.append([(ret_data_x[7], ret_data_y[7]), np.array(idata[1])])
+            # print('ret_data_x', ret_data_x)
+            # print(1/0)
+
+        # print('lpupil_cen_x_np_first_column', np.array(lpupil_cen_x)[:,0])
+        # print('lpupil_cen_x_np_second_column', np.array(lpupil_cen_x)[:,1])
+        # print('lpupil_cen_y_np', lpupil_cen_y)
+
+        # print('rpupil_cen', rpupil_cen)
+        print('localeye_centers', localeye_centers)
+        return localeye_centers
+
+
+
+    def algo_ready_next(self, gray, tSelect=0):
+        # self.mEye_centers_r = []
+        # self.mEye_centers_l = []
         self.mRT = []
         self.mEularAngle = []
         self.mLandmark_2d = []
@@ -1057,20 +1223,26 @@ class eyeTracker(object):
         self.mVpoint_2d_r = []
         self.mViewpoint_2d_l_three = []
         self.mViewpoint_2d_r_three = []
+
+        # print('self.gEye_centers_l', self.gEye_centers_l)
+        # print('self.gEye_centers_r', self.gEye_centers_r)
+        # self.get_pupil_center_with_LPF(15)
+        # print(1/0)
         for index, POI in enumerate(self.faces_eye):
             # print('\nindex', index, '\nPOI', POI)
             # print(eye_corners.shape)
 
-            time_s = time.time()
-            eye_corners = POI[2]
-            #Right eye
-            eye_center_point_r = getEyePos3(eye_corners, gray, 0)
-            self.mEye_centers_r.append(eye_center_point_r)
-            print('mEye_centers_r', self.mEye_centers_r)
-            #Left eye
-            eye_center_point_l = getEyePos3(eye_corners, gray, 1)
-            self.mEye_centers_l.append(eye_center_point_l)
-            timelap_check('2-1.mEye_centers ', time_s)
+            # time_s = time.time()
+            # eye_corners = POI[2]
+            # #Right eye
+            # print('eye_corners',eye_corners)
+            # eye_center_point_r = getEyePos3(eye_corners, gray, 0)
+            # self.mEye_centers_r.append(eye_center_point_r)
+            # print('mEye_centers_r', self.mEye_centers_r)
+            # #Left eye
+            # eye_center_point_l = getEyePos3(eye_corners, gray, 1)
+            # self.mEye_centers_l.append(eye_center_point_l)
+            # timelap_check('2-1.mEye_centers ', time_s)
 
             time_s = time.time()
             tR, tT, eulerAngle_degree = self.getWorldCoordFromFace(self.ref_p3dmodel, POI[0], self.cameraMatrix, self.distCoeffs)
@@ -1179,33 +1351,52 @@ class eyeTracker(object):
 
             # Left/Right eye gaze - method one
             if (tSelect // 100 % 10 == 1):
-                cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                cv2.line(image,  (int(self.mEye_centers_l[index][0][0]),int(self.mEye_centers_l[index][0][1])),
                          (int(self.mEye_centers_l[index][0][0] - self.mViewpoint_2d_l[index][0]),
                           int(self.mEye_centers_l[index][0][1] - self.mViewpoint_2d_l[index][1])),
                          (255, 255, 0), 2, -1)
-                cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                cv2.line(image,  (int(self.mEye_centers_r[index][0][0]),int(self.mEye_centers_r[index][0][1])),
                          (int(self.mEye_centers_r[index][0][0] - self.mViewpoint_2d_r[index][0]),
                           int(self.mEye_centers_r[index][0][1] - self.mViewpoint_2d_r[index][1])),
                          (255, 255, 0), 2, -1)
+                # cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                #          (int(self.mEye_centers_l[index][0][0] - self.mViewpoint_2d_l[index][0]),
+                #           int(self.mEye_centers_l[index][0][1] - self.mViewpoint_2d_l[index][1])),
+                #          (255, 255, 0), 2, -1)
+                # cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                #          (int(self.mEye_centers_r[index][0][0] - self.mViewpoint_2d_r[index][0]),
+                #           int(self.mEye_centers_r[index][0][1] - self.mViewpoint_2d_r[index][1])),
+                #          (255, 255, 0), 2, -1)
 
             # Left/Right eye gaze - method two
             if (tSelect // 1000 % 10 == 1):
-                cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                cv2.line(image, (int(self.mEye_centers_l[index][0][0]),int(self.mEye_centers_l[index][0][1])),
                          (int(self.mVpoint_2d_l[index][2][0][0]), int(self.mVpoint_2d_l[index][2][0][1])), (0, 255, 255), 2, -1)
-                cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                cv2.line(image, (int(self.mEye_centers_r[index][0][0]),int(self.mEye_centers_r[index][0][1])),
                          (int(self.mVpoint_2d_r[index][2][0][0]), int(self.mVpoint_2d_r[index][2][0][1])), (0, 255, 255), 2, -1)
+                # cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                #          (int(self.mVpoint_2d_l[index][2][0][0]), int(self.mVpoint_2d_l[index][2][0][1])), (0, 255, 255), 2, -1)
+                # cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                #          (int(self.mVpoint_2d_r[index][2][0][0]), int(self.mVpoint_2d_r[index][2][0][1])), (0, 255, 255), 2, -1)
 
             # Left/Right eye gaze - method three
             if (tSelect // 100000 % 10 == 1):
-                cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                cv2.line(image,  (int(self.mEye_centers_l[index][0][0]),int(self.mEye_centers_l[index][0][1])),
                          (int(self.mEye_centers_l[index][0][0] + self.mViewpoint_2d_l_three[index][0]),
                           int(self.mEye_centers_l[index][0][1] + self.mViewpoint_2d_l_three[index][1])),
                          (0, 140, 0), 2, -1)
-                cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                cv2.line(image,  (int(self.mEye_centers_r[index][0][0]),int(self.mEye_centers_r[index][0][1])),
                          (int(self.mEye_centers_r[index][0][0] + self.mViewpoint_2d_r_three[index][0]),
                           int(self.mEye_centers_r[index][0][1] + self.mViewpoint_2d_r_three[index][1])),
                          (0, 140, 0), 2, -1)
-
+                # cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                #          (int(self.mEye_centers_l[index][0][0] + self.mViewpoint_2d_l_three[index][0]),
+                #           int(self.mEye_centers_l[index][0][1] + self.mViewpoint_2d_l_three[index][1])),
+                #          (0, 140, 0), 2, -1)
+                # cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                #          (int(self.mEye_centers_r[index][0][0] + self.mViewpoint_2d_r_three[index][0]),
+                #           int(self.mEye_centers_r[index][0][1] + self.mViewpoint_2d_r_three[index][1])),
+                #          (0, 140, 0), 2, -1)
 
             if (tSelect // 10000 % 10 == 1):
                 for (sX, sY) in self.faces_point[index]:
@@ -1362,7 +1553,7 @@ class eyeTracker(object):
 
     def getEyeGaze_method_three(self, eyeData, rvec, tvec):
         rt_3x3, jacobian = cv2.Rodrigues(rvec)
-        rot2 = rotMatFromEye(eyeData)
+        rot2 = rotMatFromEye2(eyeData)
 
         rt_2 = np.dot(eulerAnglesToRotationMatrix(np.array([0, math.pi, 0])), np.array([1, 1, 1])).round(5)
         # rt = eulerAnglesToRotationMatrix(headOri_radian * rt_2)
@@ -1641,6 +1832,94 @@ class eyeTracker(object):
 
 
 if __name__ == '__main__':
+
+#     test = np.array([[[(340.0, 299.5), [[324., 298.],[350., 302.]]]],
+#                      [[(323.0, 281.0), [[314., 282.],[338., 288.]]]],
+#                     [[(323.5, 277.5), [[313., 277.], [336., 283.]]]],
+#                     [[(322.5, 274.0), [[312., 274.],[335., 279.]]]],
+#                     [[(321.5, 272.0), [[311., 272.],[334., 277.]]]],
+#                     [[(318.0, 271.0), [[307., 271.],[331., 276.]]]],
+#                     [[(315.0, 271.0), [[306., 272.],[330., 276.]]]],
+#                     [[(312.0, 273.0), [[302., 273.],[326., 278.]]]],
+#                      [[(308.0, 273.0), [[299., 274.],[323., 279.]]]],
+#                     [[(308.5, 274.5), [[299., 275.],[322., 279.]]]],
+#                      [[(307.0, 275.0), [[297., 276.],[321., 280.]]]],
+#                     [[(306.0, 276.0), [[296., 277.],[320., 281.]]]],
+#                     [[(307.0, 276.0), [[296., 277.],[320., 281.]]]],
+#                     [[(307.5, 276.5), [[297., 277.],[320., 281.]]]],
+#                     [[(308.5, 275.5), [[298., 276.],[321., 280.]]]]])
+#     test2 = [
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]]
+# ]
+#
+#     # print(test)
+#     lpupil_cen_x = []
+#     lpupil_cen_y = []
+#     for idx, tdata in enumerate(test2):
+#
+#         # print(idx, tdata)
+#         print(test2[idx])
+#         tpupil_cen_x = []
+#         tpupil_cen_y = []
+#         for i, idata in enumerate(test2[idx]):
+#             print(i, idata)
+#             print('----',idata[0],'-----',idata[1][0],idata[1][1])
+#             tpupil_cen_x.append(idata[0][0])
+#             tpupil_cen_y.append(idata[0][1])
+#             # tpupil_cen_x.extend(idata[0][0])
+#             # tpupil_cen_y.extend(idata[0][1])
+#             print('tpupil_cen_x', tpupil_cen_x)
+#
+#         lpupil_cen_x.extend([tpupil_cen_x])
+#         lpupil_cen_y.extend([tpupil_cen_y])
+#         # for j in i:
+#         #     print(j)
+#         # print(i)
+#         # print('center', i[0],'eye_pos', i[1])
+#     print('lpupil_cen_x', lpupil_cen_x)
+#     print('lpupil_cen_y', lpupil_cen_y)
+#
+#     # print(i)
+#     for e in range(i+1):
+#         print('lpupil_cen_x_np_{}_column={}'.format(e, np.array(lpupil_cen_x)[:, e]))
+#
+#     # print('lpupil_cen_x_np_first_column', np.array(lpupil_cen_x)[:,0])
+#     # print('lpupil_cen_x_np_second_column', np.array(lpupil_cen_x)[:,1])
+#     # print('lpupil_cen_y_np', lpupil_cen_y)
+#
+#     # print('rpupil_cen', rpupil_cen)
+#     print(1/0)
+
+
     distCoeffs = np.zeros((5, 1))
     # HARDCODED CAM PARAMS
     # width = 1280
@@ -1654,7 +1933,7 @@ if __name__ == '__main__':
     cameraMatrix = np.array([[maxSize, 0, width / 2.0], [0, maxSize, height / 2.0], [0, 0, 1]], np.float32)
 
     # TEST PICTURE
-    img = cv2.imread('./sample/ellipse_eye_white_left_cam.png')
+    img = cv2.imread('./sample/face_two_person.png')
     # img = cv2.imread('s_DSC05310.JPG')
     # img = cv2.imread('test2.png')
     # ellipse_eye_black_right_cam.png
@@ -1747,6 +2026,8 @@ if __name__ == '__main__':
         cv2.circle(test, (int(eye_center[0][0]), int(eye_center[0][1])), 2, (255, 0, 0), -1)
         cv2.circle(test, (int(eye_center[1][0][0]), int(eye_center[1][0][1])), 2, (0, 0, 255), -1)
         cv2.circle(test, (int(eye_center[1][1][0]), int(eye_center[1][1][1])), 2, (0, 0, 255), -1)
+
+    print('eye_center',eye_centers)
 
     # plt.figure(figsize=(16, 16))
     # plt.imshow(test)

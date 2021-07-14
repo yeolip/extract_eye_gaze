@@ -128,6 +128,7 @@ FRAME_REPEAT = 30
 tfps = 30
 available = 0
 viewType = 0
+tfreg = 5
 
 cap = VideoCapture(0)
 # cap.release()
@@ -163,17 +164,25 @@ while True:
     time_s = time.time()
     tempWidth = 120
     available = objEyeTrack.preprocess(img, (160-tempWidth,120-tempWidth,400+tempWidth,340+tempWidth))
-    # available = objEyeTrack.preprocess(img, (0,0, 640 , 480))
+    # available = objEyeTrack.preprocess(img, (0,0, 61140 , 480))
     timelap_check('1.detect face ', time_s)
 
     if(available > 0 ):
         time_s = time.time()
-        objEyeTrack.algo_run(img, tSelect=viewType )
-        timelap_check('2.calc eye gaze ', time_s)
+        ret_eye_r, ret_eye_l = objEyeTrack.algo_ready(img, tfreg )
+        timelap_check('2.gathering center of eyes ', time_s)
 
-        time_s = time.time()
-        objEyeTrack.rendering(image, tSelect=viewType )
-        timelap_check('3.rendering ', time_s)
+        if(ret_eye_r == True and ret_eye_l == True):
+            time_s = time.time()
+            objEyeTrack.algo_ready_next(img, tSelect=viewType )
+            timelap_check('3.calc eye gaze ', time_s)
+
+            time_s = time.time()
+            objEyeTrack.rendering(image, tSelect=viewType )
+            timelap_check('4.rendering ', time_s)
+    else:
+        #clear eye data
+        objEyeTrack.initilaize_data()
 
 
     # faces = detector(img)

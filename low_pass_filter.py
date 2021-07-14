@@ -6,7 +6,7 @@ from scipy.signal import butter, lfilter, freqz, filtfilt
 from matplotlib import pyplot as plt
 
 # Filter requirements.
-order = 4
+order = 3
 fs = 20.0  # sample rate, Hz
 cutoff = 3.667  # desired cutoff frequency of the filter, Hz
 
@@ -67,7 +67,7 @@ def test_use_previous_to_one_result(data, window):
     y = []
     for i in range(0, len(data)-window, 1):
         # print(i, 'data=',data[i:i + window],'windows=',window)
-        ty = low_pass_filter(data[i:i + window], window, padding=1)
+        ty = low_pass_filter(data[i:i + window], window, padding=0)
         # print('ty',ty)
         y.extend([ty[-1]])
         # y.extend([ty[int(window/2)]])
@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     # Demonstrate the use of the filter.
     # First make some data to be filtered.
-    T = 10.0             # seconds
+    T = 1.0             # seconds
     n = int(T * fs)     # total number of samples
     t = np.linspace(0, T, n, endpoint=False)
     # "Noisy" data.  We want to recover the 1.2 Hz signal from this.
@@ -135,7 +135,12 @@ if __name__ == '__main__':
     # y = low_pass_filter(data, twindow, padding=1)
     # y = low_pass_filter2(data, 20)
 
+    # testtt = [[340.0], [323.0], [323.5], [322.5], [321.5], [318.0], [315.0], [312.0], [308.0], [308.5] [318.0], [315.0], [312.0], [308.0], [308.5]] * 1
+    # print(data.shape, data)
+    # testtt = [340.0, 323.0, 323.5, 322.5, 321.5, 318.0, 315.0, 312.0, 308.0, 308.5, 318.0, 315.0, 312.0, 308.0, 308.5] * 2
+    # testtt = np.array([280.,  279.,  277.5, 276.5, 275.,  276.5, 279.5, 283.5, 287.,  288.,  287.5, 288.,289.5, 288.5, 288.])
     y = test_use_previous_after_to_one_result(data, twindow)
+    print('y', y)
     # y = test_use_previous_to_one_result(data, twindow)
 
     # buf = []
