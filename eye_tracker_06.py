@@ -40,8 +40,8 @@ MOUTH_INNER_MINI = list(range(19, 21))  # 나는 60번이 INNER로 보임
 # EYE_CLOSE_THRESH = 0.26
 EYE_CLOSE_THRESH = 1.5
 EYE_CLOSE_REPEAT = 15
-EYE_DROWSINESS_THRESH = 0.25
-EYE_DROWSINESS_REPEAT = 5
+EYE_DROWSINESS_THRESH = 0.20
+EYE_DROWSINESS_REPEAT = 5 * 2
 
 
 #status
@@ -125,6 +125,9 @@ ThreeDFacePOI2[C_L_EYE, 1] = 0
 ThreeDFacePOI2[C_L_EYE, 2] = -1
 
 PERPROMANCE_TEST = 1
+
+deg2Rad = math.pi/180
+rad2Deg = 180/math.pi
 
 # declare external func
 gi = GradientIntersect()
@@ -991,7 +994,6 @@ class eyeTracker(object):
             #Right eye
             eye_center_point_r = getEyePos3(eye_corners, gray, 0)
             self.mEye_centers_r.append(eye_center_point_r)
-            print('mEye_centers_r', self.mEye_centers_r)
             #Left eye
             eye_center_point_l = getEyePos3(eye_corners, gray, 1)
             self.mEye_centers_l.append(eye_center_point_l)
@@ -1075,7 +1077,6 @@ class eyeTracker(object):
             # Right eye
             eye_center_point_r = getEyePos3(eye_corners, gray, 0)
             self.mEye_centers_r.append(eye_center_point_r)
-            print('mEye_centers_r', self.mEye_centers_r)
             # Left eye
             eye_center_point_l = getEyePos3(eye_corners, gray, 1)
             self.mEye_centers_l.append(eye_center_point_l)
@@ -1098,6 +1099,9 @@ class eyeTracker(object):
             self.gEye_centers_l.pop(0)
             self.gEye_centers_l.append(self.mEye_centers_l)
             ret_l = True
+
+        print('mEye_centers_r', self.mEye_centers_r)
+        print('mEye_centers_l', self.mEye_centers_l)
 
         if(ret_r == True and ret_l == True):
             self.mEye_centers_r = self.get_pupil_center_with_LPF(self.gEye_centers_r, availFrm)
@@ -1167,15 +1171,20 @@ class eyeTracker(object):
                 print('----', idata[0], '-----', idata[1][0], idata[1][1])
                 tpupil_cen_x.append(idata[0][0])
                 tpupil_cen_y.append(idata[0][1])
+                tpupil_corner_l_x.append(idata[1][0][0])
+                tpupil_corner_l_y.append(idata[1][0][1])
+                tpupil_corner_r_x.append(idata[1][1][0])
+                tpupil_corner_r_y.append(idata[1][1][1])
+
                 # print('tpupil_cen_x', tpupil_cen_x)
 
 
             pupil_cen_x.extend([tpupil_cen_x])
             pupil_cen_y.extend([tpupil_cen_y])
-            # corner_l_pupil_x
-            # corner_l_pupil_y
-            # corner_r_pupil_x
-            # corner_r_pupil_y
+            corner_l_pupil_x.extend([tpupil_corner_l_x])
+            corner_l_pupil_y.extend([tpupil_corner_l_y])
+            corner_r_pupil_x.extend([tpupil_corner_r_x])
+            corner_r_pupil_y.extend([tpupil_corner_r_y])
 
         print('pupil_cen_x', pupil_cen_x)
         print('pupil_cen_y', pupil_cen_y)
@@ -1189,7 +1198,15 @@ class eyeTracker(object):
             print('center', np.average(np.array(pupil_cen_x)[:, e]), np.average(np.array(pupil_cen_y)[:, e]) )
             print('pupil_corner', idata[1][0], idata[1][1])
             print('pupil_corner_1', idata[1])
-            localeye_centers.append([(np.mean(np.array(pupil_cen_x)[:, e]), np.mean(np.array(pupil_cen_y)[:, e])),np.array(idata[1])])
+            # localeye_centers.append([(np.mean(np.array(pupil_cen_x)[:, e]), np.mean(np.array(pupil_cen_y)[:, e])),np.array(idata[1])])
+            temp = [[np.mean(np.array(corner_l_pupil_x)[:, e]),np.mean(np.array(corner_l_pupil_y)[:, e])],[np.mean(np.array(corner_r_pupil_x)[:, e]),np.mean(np.array(corner_r_pupil_y)[:, e])]]
+            print('temp',temp)
+            localeye_centers.append([(np.mean(np.array(pupil_cen_x)[:, e]), np.mean(np.array(pupil_cen_y)[:, e])),np.array(temp)])
+
+            # print(np.array(buffer)[:, 0][:, 1][:, 0])
+            # localeye_centers.append([(np.mean(np.array(pupil_cen_x)[:, e]), np.mean(np.array(pupil_cen_y)[:, e])),[np.array(buffer)[:, 0][:, 1][:, 0], np.array(buffer)[:, 0][:, 1][:, 1]]])
+            # print(np.array(buffer)[:, 0][:, 1][:, 0][-1]))
+            # print(np.array(buffer)[:, 0][:, 1][:, 1][-1])
 
             # low_pass_filter
             # ret_data_x = test_use_previous_to_one_result(np.array(lpupil_cen_x)[:, e],14)
@@ -1248,13 +1265,13 @@ class eyeTracker(object):
             tR, tT, eulerAngle_degree = self.getWorldCoordFromFace(self.ref_p3dmodel, POI[0], self.cameraMatrix, self.distCoeffs)
             self.mRT.append([tR,tT])
             self.mEularAngle.append(eulerAngle_degree)
-            # print('tR',tR,'tT',tT)
+            print('tR',tR,'tT',tT)
             timelap_check('2-2.RT ', time_s)
 
             time_s = time.time()
             tlandmark_2d = self.getLandmark(self.ref_p3dmodel[C_NOSE], tR, tT)
             self.mLandmark_2d.append(tlandmark_2d)
-            # print('tlandmark_2d',  tlandmark_2d[0][0], np.round(tlandmark_2d[1:4,-1]))
+            print('mLandmark_2d',  self.mLandmark_2d)
             timelap_check('2-3.Landmark ', time_s)
 
             if(tSelect//10%10 == 1):
@@ -1319,7 +1336,7 @@ class eyeTracker(object):
                         'EyeRL=[{:s},{:s}],Mouth={:s}'.format(tleye_text, treye_text, tmouth_text),
                         (max(0,p_reye[0][0]-200), max(0,p_reye[0][1]-50)),
                         cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=4)
-            self.drowsiness_detect(image, tleye_value)
+            self.drowsiness_detect(image, tleye_value, p_reye[0])
 
         for index, POI in enumerate(self.faces_eye):
 
@@ -1328,8 +1345,10 @@ class eyeTracker(object):
             # print('tlandmark_2d',  tlandmark_2d[0][0], np.round(tlandmark_2d[1:4,-1]))
 
             #face pitch, yaw, roll
+            # print(POI[2][0][0][0], POI[2][0][0][1])
             cv2.putText(image,'pitch {:.02f}, yaw {:.02f}, roll {:.02f}'.format(self.mEularAngle[index][0],self.mEularAngle[index][1],self.mEularAngle[index][2]),
-                        (10, 30),
+                        # (10, 30),
+                        (max(0, int(POI[2][0][0][0] - 200)), max(0, int(POI[2][0][0][1] - 80))),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), thickness=2, lineType=4)
 
             #eye center and eye corner
@@ -1413,10 +1432,18 @@ class eyeTracker(object):
         # rvec[1] = rvec[1]+3.14/10 # yaw임 (얼굴이 왼쪽으로 +a , 얼굴이 오른쪽으로 -a)
         # rvec[2] = rvec[2]+3.14/10 # pitch임 (얼굴이 위쪽으로 +a , 얼굴이 아래쪽으로 -a)
 
+
+        rvec_3x3 = cv2.Rodrigues(rvec)[0]
+        # print(rvec_3x3)
+        pitch_yaw_roll = rotationMatrixToEulerAngles(rvec_3x3)
+        pitch = -pitch_yaw_roll[0] * rad2Deg
+        yaw = -pitch_yaw_roll[1] * rad2Deg
+        roll = pitch_yaw_roll[2] * rad2Deg
+
         #ref_point의 축이 변경되면, pitch yaw roll이 변경될수 있음
-        pitch = -math.degrees(math.asin(math.sin(rvec[0])))
-        yaw = -math.degrees(math.asin(math.sin(rvec[1])))
-        roll = math.degrees(math.asin(math.sin(rvec[2])))
+        # pitch = -math.degrees(math.asin(math.sin(rvec[0])))
+        # yaw = -math.degrees(math.asin(math.sin(rvec[1])))
+        # roll = math.degrees(math.asin(math.sin(rvec[2])))
 
         #2번째
         # rvec_matrix = cv2.Rodrigues(rvec)[0]
@@ -1652,7 +1679,7 @@ class eyeTracker(object):
 
         return tstatus, ttext
 
-    def drowsiness_detect(self,image, ear):
+    def drowsiness_detect(self,image, ear, pos):
         # check to see if the eye aspect ratio is below the blink
         # threshold, and if so, increment the blink frame counter
         if ear < EYE_DROWSINESS_THRESH:
@@ -1672,7 +1699,8 @@ class eyeTracker(object):
                 #         t.deamon = True
                 #         t.start()
                 # draw an alarm on the frame
-                cv2.putText(image, "!!!!!!  DROWSINESS ALERT  !!!!!!", (10, 60),
+                # cv2.putText(image, "!!!!!!  DROWSINESS ALERT  !!!!!!", (10, 60),
+                cv2.putText(image, "!!!!!!  DROWSINESS ALERT  !!!!!!", (max(0,pos[0]-200), max(0,pos[1]-110)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         # otherwise, the eye aspect ratio is not below the blink
         # threshold, so reset the counter and alarm
@@ -1833,91 +1861,87 @@ class eyeTracker(object):
 
 if __name__ == '__main__':
 
-#     test = np.array([[[(340.0, 299.5), [[324., 298.],[350., 302.]]]],
-#                      [[(323.0, 281.0), [[314., 282.],[338., 288.]]]],
-#                     [[(323.5, 277.5), [[313., 277.], [336., 283.]]]],
-#                     [[(322.5, 274.0), [[312., 274.],[335., 279.]]]],
-#                     [[(321.5, 272.0), [[311., 272.],[334., 277.]]]],
-#                     [[(318.0, 271.0), [[307., 271.],[331., 276.]]]],
-#                     [[(315.0, 271.0), [[306., 272.],[330., 276.]]]],
-#                     [[(312.0, 273.0), [[302., 273.],[326., 278.]]]],
-#                      [[(308.0, 273.0), [[299., 274.],[323., 279.]]]],
-#                     [[(308.5, 274.5), [[299., 275.],[322., 279.]]]],
-#                      [[(307.0, 275.0), [[297., 276.],[321., 280.]]]],
-#                     [[(306.0, 276.0), [[296., 277.],[320., 281.]]]],
-#                     [[(307.0, 276.0), [[296., 277.],[320., 281.]]]],
-#                     [[(307.5, 276.5), [[297., 277.],[320., 281.]]]],
-#                     [[(308.5, 275.5), [[298., 276.],[321., 280.]]]]])
-#     test2 = [
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
-# [[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
-#  [(456.5, 358.5), [[442., 365.], [467., 367.]]]]
-# ]
+    test2 = [
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]],
+[[(982.5, 395.0), [[ 975.,  401.],[1000.,  394.]]],
+ [(456.5, 358.5), [[442., 365.], [467., 367.]]]]
+]
 #
-#     # print(test)
-#     lpupil_cen_x = []
-#     lpupil_cen_y = []
-#     for idx, tdata in enumerate(test2):
-#
-#         # print(idx, tdata)
-#         print(test2[idx])
-#         tpupil_cen_x = []
-#         tpupil_cen_y = []
-#         for i, idata in enumerate(test2[idx]):
-#             print(i, idata)
-#             print('----',idata[0],'-----',idata[1][0],idata[1][1])
-#             tpupil_cen_x.append(idata[0][0])
-#             tpupil_cen_y.append(idata[0][1])
-#             # tpupil_cen_x.extend(idata[0][0])
-#             # tpupil_cen_y.extend(idata[0][1])
-#             print('tpupil_cen_x', tpupil_cen_x)
-#
-#         lpupil_cen_x.extend([tpupil_cen_x])
-#         lpupil_cen_y.extend([tpupil_cen_y])
-#         # for j in i:
-#         #     print(j)
-#         # print(i)
-#         # print('center', i[0],'eye_pos', i[1])
-#     print('lpupil_cen_x', lpupil_cen_x)
-#     print('lpupil_cen_y', lpupil_cen_y)
-#
-#     # print(i)
-#     for e in range(i+1):
-#         print('lpupil_cen_x_np_{}_column={}'.format(e, np.array(lpupil_cen_x)[:, e]))
-#
-#     # print('lpupil_cen_x_np_first_column', np.array(lpupil_cen_x)[:,0])
-#     # print('lpupil_cen_x_np_second_column', np.array(lpupil_cen_x)[:,1])
-#     # print('lpupil_cen_y_np', lpupil_cen_y)
-#
-#     # print('rpupil_cen', rpupil_cen)
-#     print(1/0)
+    # print(np.array(test2)[:, 0])
+    print(np.array(test2)[:, 0][:, 0][:, 0])
+    print(np.array(test2)[:, 0][:, 0][:, 1])
+    print(np.array(test2)[:, 1][:, 0][:, 0])
+    print(np.array(test2)[:, 1][:, 0][:, 1])
+
+    # print(np.array(test2)[:, 0][:, 1][:, 0][-1])
+    # print(np.array(test2)[:, 0][:, 1][:, 0][:, 1])
+    # print(np.array(test2)[:, 0][:, 1][:, 1][-1])
+    # print(np.array(test2)[:, 1])
+    # print(1/0)
+    # print(test)
+    lpupil_cen_x = []
+    lpupil_cen_y = []
+    for idx, tdata in enumerate(test2):
+
+        # print(idx, tdata)
+        print(test2[idx])
+        tpupil_cen_x = []
+        tpupil_cen_y = []
+        for i, idata in enumerate(test2[idx]):
+            print(i, idata)
+            print('----',idata[0],'-----',idata[1][0],idata[1][1])
+            tpupil_cen_x.append(idata[0][0])
+            tpupil_cen_y.append(idata[0][1])
+            # tpupil_cen_x.extend(idata[0][0])
+            # tpupil_cen_y.extend(idata[0][1])
+            print('tpupil_cen_x', tpupil_cen_x)
+
+        lpupil_cen_x.extend([tpupil_cen_x])
+        lpupil_cen_y.extend([tpupil_cen_y])
+        # for j in i:
+        #     print(j)
+        # print(i)
+        # print('center', i[0],'eye_pos', i[1])
+    print('lpupil_cen_x', lpupil_cen_x)
+    print('lpupil_cen_y', lpupil_cen_y)
+
+    # print(i)
+    for e in range(i+1):
+        print('lpupil_cen_x_np_{}_column={}'.format(e, np.array(lpupil_cen_x)[:, e]))
+
+    # print('lpupil_cen_x_np_first_column', np.array(lpupil_cen_x)[:,0])
+    # print('lpupil_cen_x_np_second_column', np.array(lpupil_cen_x)[:,1])
+    # print('lpupil_cen_y_np', lpupil_cen_y)
+
+    # print('rpupil_cen', rpupil_cen)
+    print(1/0)
 
 
     distCoeffs = np.zeros((5, 1))

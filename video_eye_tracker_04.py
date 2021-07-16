@@ -70,6 +70,8 @@ class VideoCapture:
 tdistCoeffs = np.zeros((5, 1))
 twidth = 640
 theight = 480
+# twidth = 1280
+# theight = 964
 tmaxSize = max(twidth, theight)
 tcameraMatrix = np.array([[tmaxSize, 0, twidth / 2.0], [0, tmaxSize, theight / 2.0], [0, 0, 1]], np.float32)
 
@@ -113,7 +115,7 @@ faceModel3D[6] = [ 3.5,  0.,  -1. ]
 predictor_path = "./dlib/type1_21_facefull.dat"
 
 objEyeTrack = eyeTrk.eyeTracker(predictor_path)
-tcameraMatrix, tdistCoeffs = select_camera_calib(1)
+#tcameraMatrix, tdistCoeffs = select_camera_calib(1)
 objEyeTrack.initilaize_calib(tcameraMatrix, tdistCoeffs)
 # objEyeTrack.initilaize_training_path(predictor_path)
 # objEyeTrack.initialize_p3dmodel(faceModel3D)
@@ -127,8 +129,8 @@ ttimecount = 0
 FRAME_REPEAT = 30
 tfps = 30
 available = 0
-viewType = 0
-tfreg = 5
+viewType = 100001 #110011
+tfreg = 1
 
 cap = VideoCapture(0)
 # cap.release()
@@ -146,6 +148,10 @@ while True:
     ttimecount += 1
     cap.retrieve()
     ret, image = cap.read()
+    # image = cv2.imread('./sample/face_two_person.png')
+    # image = cv2.imread('./sample/distort/distort_01.png')
+    # test = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
     # image = cap.read()
 
     # if(ttimecount%2 == 0):
@@ -164,7 +170,7 @@ while True:
     time_s = time.time()
     tempWidth = 120
     available = objEyeTrack.preprocess(img, (160-tempWidth,120-tempWidth,400+tempWidth,340+tempWidth))
-    # available = objEyeTrack.preprocess(img, (0,0, 61140 , 480))
+    # available = objEyeTrack.preprocess(img, (0,0, 1280 , 800))
     timelap_check('1.detect face ', time_s)
 
     if(available > 0 ):
@@ -175,6 +181,8 @@ while True:
         if(ret_eye_r == True and ret_eye_l == True):
             time_s = time.time()
             objEyeTrack.algo_ready_next(img, tSelect=viewType )
+            # objEyeTrack.algo_run(img, tSelect=viewType )
+
             timelap_check('3.calc eye gaze ', time_s)
 
             time_s = time.time()
