@@ -1511,6 +1511,7 @@ class eyeTracker(object):
     K0 = 0.53    #cornea radius
     '''
     def getEyeGaze_method_two_EyeModel(self, pupilC_pnt, rvec, tvec, ref_eyeC_pnt, img_eyeC_pnt, k=1.31, k0 = 0.53):
+        eyeConst = 20
         # print("\n\n///getEyeGaze_method_two_EyeModel//////////\n")
         rvec_matrix = cv2.Rodrigues(rvec)[0]
         proj_matrix = np.hstack((rvec_matrix, tvec))
@@ -1528,18 +1529,16 @@ class eyeTracker(object):
         tretGapCoord[2] = 0
         print('retGapCoord', [np.array(retGapCoord.T[1])[0][0:3]])
 
-        taa = np.array([ref_eyeC_pnt]) - np.array([(0, 0, k)])
-        # tbb = np.array([ref_eyeC_pnt]) + tretGap.T
-        tbb = [np.array(retGapCoord.T[1])[0][0:3]]
-        # tbb = np.array([ThreeDFacePOI2[6]]) + tretGapCoord
+        tc_eyeball = np.array([ref_eyeC_pnt]) - np.array([(0, 0, k)])
+        tc_pupil= [np.array(retGapCoord.T[1])[0][0:3]]
+        tc_eyemodel = np.array([ref_eyeC_pnt])
 
-        tcc = np.array([ref_eyeC_pnt])
-        print('taa',taa)
-        print('tbb',tbb)
-        print('tbb-taa',(tbb - taa))
-        print('tcc-taa',(tcc - taa))
+        print('tc_eyeball',tc_eyeball)
+        print('tc_pupil',tc_pupil)
+        print('tc_pupil-tc_eyeball',(tc_pupil - tc_eyeball))
+        print('tc_eyemodel-tc_eyeball',(tc_eyemodel - tc_eyeball))
 
-        eyeGazePoint_3d = np.array([taa, tbb, (tbb - taa) *10+ taa])
+        eyeGazePoint_3d = np.array([tc_eyeball, tc_pupil, (tc_pupil - tc_eyeball) * eyeConst + tc_pupil])
         print('3d eye gaze vector\n', eyeGazePoint_3d)
 
         eyeGazePoint_2d, jac = cv2.projectPoints(eyeGazePoint_3d, rvec, tvec,
