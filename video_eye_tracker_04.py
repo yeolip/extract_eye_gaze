@@ -130,7 +130,7 @@ FRAME_REPEAT = 30
 tfps = 30
 available = 0
 viewType = 100001 #110011
-tfreg = 1
+tfreg = 3
 
 cap = VideoCapture(0)
 # cap.release()
@@ -149,6 +149,12 @@ while True:
     cap.retrieve()
     ret, image = cap.read()
     # image = cv2.imread('./sample/face_two_person.png')
+    # if(ttimecount%2==0):
+    #     image = cv2.imread('./out009.png')
+    # else:
+    #     image = cv2.imread('./out011.png')
+    # image = cv2.imread('./out012.png')
+
     # image = cv2.imread('./sample/distort/distort_01.png')
     # test = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -168,25 +174,31 @@ while True:
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     time_s = time.time()
-    tempWidth = 120
-    available = objEyeTrack.preprocess(img, (160-tempWidth,120-tempWidth,400+tempWidth,340+tempWidth))
-    # available = objEyeTrack.preprocess(img, (0,0, 1280 , 800))
+    tempWidth = 0
+    # available = objEyeTrack.preprocess(img, (160-tempWidth,120-tempWidth,400+tempWidth,340+tempWidth))
+    available = objEyeTrack.preprocess(img, (0+tempWidth,0+tempWidth,twidth-tempWidth,theight-tempWidth))
+    # available = objEyeTrack.preprocess(img, (0, 0, 1280, 964))
+
     timelap_check('1.detect face ', time_s)
 
     if(available > 0 ):
+        ret_eye_r = ret_eye_l = False
         time_s = time.time()
+
         ret_eye_r, ret_eye_l = objEyeTrack.algo_ready(img, tfreg )
+
+        # objEyeTrack.algo_run(img, tSelect=viewType)
+        # objEyeTrack.rendering_with_filter(image, tSelect=viewType)
+
         timelap_check('2.gathering center of eyes ', time_s)
 
         if(ret_eye_r == True and ret_eye_l == True):
             time_s = time.time()
             objEyeTrack.algo_ready_next(img, tSelect=viewType )
-            # objEyeTrack.algo_run(img, tSelect=viewType )
-
             timelap_check('3.calc eye gaze ', time_s)
 
             time_s = time.time()
-            objEyeTrack.rendering(image, tSelect=viewType )
+            objEyeTrack.rendering_with_filter(image, tSelect=viewType )
             timelap_check('4.rendering ', time_s)
     else:
         #clear eye data

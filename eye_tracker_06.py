@@ -1059,6 +1059,13 @@ class eyeTracker(object):
                 self.mViewpoint_2d_r_three.append(tViewpoint_2d_r)
                 # print('tViewpoint_2d_r', tViewpoint_2d_r)
                 timelap_check('2-5.eye gaze - method one ', time_s)
+
+        if(len(self.gEye_centers_r)):
+            self.gEye_centers_r.pop(0)
+        if(len(self.gEye_centers_l)):
+            self.gEye_centers_l.pop(0)
+        self.gEye_centers_r.append(self.mEye_centers_r)
+        self.gEye_centers_l.append(self.mEye_centers_l)
         pass
 
     # this algo should be ready both eye values. (algo do not support one detected eye)
@@ -1422,6 +1429,104 @@ class eyeTracker(object):
                     cv2.circle(image, (sX, sY), 1, (255, 0, 0), -1)
         pass
 
+    def rendering_with_filter(self, image, tSelect=0):
+        for index, (p_leye, p_reye, p_mouthin, p_mouthout) in enumerate(self.faces_status):
+            # print(index, '\n', p_leye, '\n', p_reye,'\n', p_mouthin,'\n', p_mouthout)
+            # treye_text = "None"
+            # tleye_text = "None"
+            tleye_status, tleye_text, tleye_value = self.eye_aspect_ratio(p_leye)
+            treye_status, treye_text, treye_value = self.eye_aspect_ratio(p_reye)
+            tmouth_status, tmouth_text = self.mouth_open(p_mouthin, p_mouthout)
+            cv2.putText(image,
+                        'EyeRL=[{:s},{:s}],Mouth={:s}'.format(tleye_text, treye_text, tmouth_text),
+                        (max(0,p_reye[0][0]-200), max(0,p_reye[0][1]-50)),
+                        cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), thickness=2, lineType=4)
+            self.drowsiness_detect(image, tleye_value, p_reye[0])
+
+        for index, POI in enumerate(self.faces_eye):
+
+            #landmark
+            draw_xyz_axis(image, self.mLandmark_2d[index][0], np.round(self.mLandmark_2d[index][1:4,-1]))
+            # print('tlandmark_2d',  tlandmark_2d[0][0], np.round(tlandmark_2d[1:4,-1]))
+
+            #face pitch, yaw, roll
+            # print(POI[2][0][0][0], POI[2][0][0][1])
+            cv2.putText(image,'pitch {:.02f}, yaw {:.02f}, roll {:.02f}'.format(self.mEularAngle[index][0],self.mEularAngle[index][1],self.mEularAngle[index][2]),
+                        # (10, 30),
+                        (max(0, int(POI[2][0][0][0] - 200)), max(0, int(POI[2][0][0][1] - 80))),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), thickness=2, lineType=4)
+
+            #eye center and eye corner
+            if(tSelect%10 == 1):
+                cv2.circle(image, (int(self.gEye_centers_r[-1][index][0][0]), int(self.gEye_centers_r[-1][index][0][1])), 2, (255, 0, 0), -1)
+                cv2.circle(image, (int(self.gEye_centers_r[-1][index][1][0][0]), int(self.gEye_centers_r[-1][index][1][0][1])), 2, (0, 0, 255), -1)
+                cv2.circle(image, (int(self.gEye_centers_r[-1][index][1][1][0]), int(self.gEye_centers_r[-1][index][1][1][1])), 2, (0, 0, 255), -1)
+                cv2.circle(image, (int(self.gEye_centers_l[-1][index][0][0]), int(self.gEye_centers_l[-1][index][0][1])), 2, (255, 0, 0), -1)
+                cv2.circle(image, (int(self.gEye_centers_l[-1][index][1][0][0]), int(self.gEye_centers_l[-1][index][1][0][1])), 2, (0, 0, 255), -1)
+                cv2.circle(image, (int(self.gEye_centers_l[-1][index][1][1][0]), int(self.gEye_centers_l[-1][index][1][1][1])), 2, (0, 0, 255), -1)
+
+
+            #Left/Right eyeball gaze
+            if(tSelect//10%10 == 1):
+                cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                         (int(self.mEyeballgaze_l[index][0][0][0]), int(self.mEyeballgaze_l[index][0][0][1])), (255, 0, 255), 2, -1)
+                cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                         (int(self.mEyeballgaze_r[index][0][0][0]), int(self.mEyeballgaze_r[index][0][0][1])), (255, 0, 255), 2, -1)
+
+            # Left/Right eye gaze - method one
+            if (tSelect // 100 % 10 == 1):
+                cv2.line(image,  (int(self.gEye_centers_l[-1][index][0][0]),int(self.gEye_centers_l[-1][index][0][1])),
+                         (int(self.gEye_centers_l[-1][index][0][0] - self.mViewpoint_2d_l[index][0]),
+                          int(self.gEye_centers_l[-1][index][0][1] - self.mViewpoint_2d_l[index][1])),
+                         (255, 255, 0), 2, -1)
+                cv2.line(image,  (int(self.gEye_centers_r[-1][index][0][0]),int(self.gEye_centers_r[-1][index][0][1])),
+                         (int(self.gEye_centers_r[-1][index][0][0] - self.mViewpoint_2d_r[index][0]),
+                          int(self.gEye_centers_r[-1][index][0][1] - self.mViewpoint_2d_r[index][1])),
+                         (255, 255, 0), 2, -1)
+                # cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                #          (int(self.mEye_centers_l[index][0][0] - self.mViewpoint_2d_l[index][0]),
+                #           int(self.mEye_centers_l[index][0][1] - self.mViewpoint_2d_l[index][1])),
+                #          (255, 255, 0), 2, -1)
+                # cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                #          (int(self.mEye_centers_r[index][0][0] - self.mViewpoint_2d_r[index][0]),
+                #           int(self.mEye_centers_r[index][0][1] - self.mViewpoint_2d_r[index][1])),
+                #          (255, 255, 0), 2, -1)
+
+            # Left/Right eye gaze - method two
+            if (tSelect // 1000 % 10 == 1):
+                cv2.line(image, (int(self.gEye_centers_l[-1][index][0][0]),int(self.gEye_centers_l[-1][index][0][1])),
+                         (int(self.mVpoint_2d_l[index][2][0][0]), int(self.mVpoint_2d_l[index][2][0][1])), (0, 255, 255), 2, -1)
+                cv2.line(image, (int(self.gEye_centers_r[-1][index][0][0]),int(self.gEye_centers_r[-1][index][0][1])),
+                         (int(self.mVpoint_2d_r[index][2][0][0]), int(self.mVpoint_2d_r[index][2][0][1])), (0, 255, 255), 2, -1)
+                # cv2.line(image, (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                #          (int(self.mVpoint_2d_l[index][2][0][0]), int(self.mVpoint_2d_l[index][2][0][1])), (0, 255, 255), 2, -1)
+                # cv2.line(image, (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                #          (int(self.mVpoint_2d_r[index][2][0][0]), int(self.mVpoint_2d_r[index][2][0][1])), (0, 255, 255), 2, -1)
+
+            # Left/Right eye gaze - method three
+            if (tSelect // 100000 % 10 == 1):
+                cv2.line(image,  (int(self.gEye_centers_l[-1][index][0][0]),int(self.gEye_centers_l[-1][index][0][1])),
+                         (int(self.gEye_centers_l[-1][index][0][0] + self.mViewpoint_2d_l_three[index][0]),
+                          int(self.gEye_centers_l[-1][index][0][1] + self.mViewpoint_2d_l_three[index][1])),
+                         (0, 140, 0), 2, -1)
+                cv2.line(image,  (int(self.gEye_centers_r[-1][index][0][0]),int(self.gEye_centers_r[-1][index][0][1])),
+                         (int(self.gEye_centers_r[-1][index][0][0] + self.mViewpoint_2d_r_three[index][0]),
+                          int(self.gEye_centers_r[-1][index][0][1] + self.mViewpoint_2d_r_three[index][1])),
+                         (0, 140, 0), 2, -1)
+                # cv2.line(image,  (int(POI[0][C_L_EYE][0]),int(POI[0][C_L_EYE][1])),
+                #          (int(self.mEye_centers_l[index][0][0] + self.mViewpoint_2d_l_three[index][0]),
+                #           int(self.mEye_centers_l[index][0][1] + self.mViewpoint_2d_l_three[index][1])),
+                #          (0, 140, 0), 2, -1)
+                # cv2.line(image,  (int(POI[0][C_R_EYE][0]),int(POI[0][C_R_EYE][1])),
+                #          (int(self.mEye_centers_r[index][0][0] + self.mViewpoint_2d_r_three[index][0]),
+                #           int(self.mEye_centers_r[index][0][1] + self.mViewpoint_2d_r_three[index][1])),
+                #          (0, 140, 0), 2, -1)
+
+            if (tSelect // 10000 % 10 == 1):
+                for (sX, sY) in self.faces_point[index]:
+                    cv2.circle(image, (sX, sY), 1, (255, 0, 0), -1)
+        pass
+
     # Given the data from a faceExtract
     def getWorldCoordFromFace(self, ref_point, image_point, cameraMatrix, distCoeffs):
         # print("\n//////////////getCoordFromFace")
@@ -1511,7 +1616,7 @@ class eyeTracker(object):
     K0 = 0.53    #cornea radius
     '''
     def getEyeGaze_method_two_EyeModel(self, pupilC_pnt, rvec, tvec, ref_eyeC_pnt, img_eyeC_pnt, k=1.31, k0 = 0.53):
-        eyeConst = 20
+        eyeConst = 10
         # print("\n\n///getEyeGaze_method_two_EyeModel//////////\n")
         rvec_matrix = cv2.Rodrigues(rvec)[0]
         proj_matrix = np.hstack((rvec_matrix, tvec))
