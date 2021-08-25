@@ -35,7 +35,10 @@ FRAME_REPEAT = 30
 tfps = 30
 available = 0
 viewType = 0
-loc = (0,0)
+# loc = (0,0)
+eyeConst = 3
+loc_l = (0,0)
+loc_r = (0,0)
 
 gi_l = GradientIntersect()
 gi_r = GradientIntersect()
@@ -93,10 +96,10 @@ while True:
         # p_lefteye.append([face[t] for t in LEFT_EYE])
         # p_righteye.append([face[t] for t in RIGHT_EYE])
         # for tpoint in p_lefteye:
-        lx = np.min(p_lefteye, axis=0)[0] -3
-        ly = np.min(p_lefteye, axis=0)[1] - 3  # lip_check
-        lx2 = np.max(p_lefteye, axis=0)[0] +3
-        ly2 = np.max(p_lefteye, axis=0)[1] + 3
+        lx = np.min(p_lefteye, axis=0)[0] - eyeConst
+        ly = np.min(p_lefteye, axis=0)[1] - eyeConst  # lip_check
+        lx2 = np.max(p_lefteye, axis=0)[0] + eyeConst
+        ly2 = np.max(p_lefteye, axis=0)[1] + eyeConst
         print(lx, ly, lx2, ly2)
         # leye_result = eye_aspect_ratio(tpoint)
         # p_lefteye_local = (p_lefteye - np.array([x, y]))
@@ -105,29 +108,43 @@ while True:
             # if (SAVE_PART_OF_EYES):
             #     cv2.imwrite('eyeL{:02d}.png'.format(tnum), clipping_gray)
 
-        rx = np.min(p_righteye, axis=0)[0] -3
-        ry = np.min(p_righteye, axis=0)[1] - 3  # lip_check
-        rx2 = np.max(p_righteye, axis=0)[0] +3
-        ry2 = np.max(p_righteye, axis=0)[1] + 3
+        rx = np.min(p_righteye, axis=0)[0] - eyeConst
+        ry = np.min(p_righteye, axis=0)[1] - eyeConst   # lip_check
+        rx2 = np.max(p_righteye, axis=0)[0] + eyeConst
+        ry2 = np.max(p_righteye, axis=0)[1] + eyeConst
         # print(lx, ly, lx2, ly2)
         clipping_gray_r = gray[ry:ry2, rx:rx2]
 
         if(available == 0):
-            # gi_l = GradientIntersect()
-            loc_l = gi_l.locate(clipping_gray_l)
-            print('loc_l', loc_l)
-            cv2.circle(image, (int(lx + loc_l[1]), int(ly + loc_l[0])), 2, (0, 0, 255), -1)
-            available = 0
+            if(loc_l[0]==0 and loc_l[1]==0):
+                # gi_l = GradientIntersect()
+                loc_l = gi_l.locate(clipping_gray_l)
+                print('loc_l', loc_l)
+                cv2.circle(image, (int(lx + loc_l[1]), int(ly + loc_l[0])), 2, (0, 0, 255), -1)
+                available = 0
+            else:
+                # loc_l = gi_l.track(clipping_gray_l, loc_l)
+                # cv2.circle(image, (int(loc_l[1]+lx), int(loc_l[0]+ly)), 2, (0, 255, 255), -1)
+                loc_l2 = gi_l.track(gray, (ly+loc_l[0], lx+loc_l[1]))
+                cv2.circle(image, (int(loc_l2[1]), int(loc_l2[0])), 2, (0, 255, 255), -1)
 
-            # gi_r = GradientIntersect()
-            loc_r = gi_r.locate(clipping_gray_r)
-            print('loc_r', loc_r)
-            cv2.circle(image, (int(rx + loc_r[1]), int(ry + loc_r[0])), 2, (0, 0, 255), -1)
+                # loc_l2 = gi_l.track(gray[y1:y2, x1:x2], (ly +loc_l[0]-y1, lx +loc_l[1]-x1))
+                # cv2.circle(image, (int(x1+lx+loc_l[1]), int(y1+ly+loc_l[0])), 2, (0, 255, 255), -1)
+
+            if(loc_r[0]==0 and loc_r[1]==0):
+                # gi_r = GradientIntersect()
+                loc_r = gi_r.locate(clipping_gray_r)
+                print('loc_r', loc_r)
+                cv2.circle(image, (int(rx + loc_r[1]), int(ry + loc_r[0])), 2, (0, 0, 255), -1)
+                available = 0
+            else:
+                # loc_r = gi_r.track(clipping_gray_r, loc_r)
+                loc_r2 = gi_r.track(gray, (ry+loc_r[0] , rx+loc_r[1]))
+                cv2.circle(image, (int(loc_r2[1]), int(loc_r2[0])), 2, (0, 255, 255), -1)
 
             # cv2.imshow("result", clipping_gray)
             # cv2.waitKey(0)
         # elif(available == 1):
-            # loc_l = gi_l.track(clipping_gray_l, loc_l)
             # loc_l = gi_l.track(gray, (int(lx + loc_l[1]), int(ly + loc_l[0])))
             # print('loc2',loc_l)
     # image = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
