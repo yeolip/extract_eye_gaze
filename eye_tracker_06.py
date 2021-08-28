@@ -507,7 +507,7 @@ def getEyePos2(corners, img, left_or_right=0):
 
 
 def getEyePos3(corners, img, left_or_right=0):
-    scaleValue = 1.0
+    scaleValue = 1.5
     # here we don't need both but the biggest one
     eyes = getEyePOI(corners)
     # print('corners', corners, '\neyes', eyes)
@@ -527,7 +527,7 @@ def getEyePos3(corners, img, left_or_right=0):
                    ]
 
     loc_l = gi.locate(croppedImage)
-    maxcoord = (int(loc_l[1] / scaleValue), int(loc_l[0] / scaleValue))
+    maxcoord = (int(loc_l[1] ), int(loc_l[0] ))
     # return [t, corners[choosen] ]
     ret = tuple(map(operator.add, maxcoord, [scalesrect[0], scalesrect[1]]))
     print('&&&&&&&&&&&&&&&&&&', scalesrect[0], scalesrect[1], '***', maxcoord)
