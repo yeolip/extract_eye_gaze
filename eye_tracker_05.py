@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 # from PIL import Image
 from matplotlib import pyplot as plt
 # %matplotlib inline
@@ -177,6 +177,17 @@ def calc_dist(p1, p2):
     return distance
 
 def shape_to_np(shape, dtype="int", offset=(0,0)):
+    """
+    Convert a facial landmark shape to a numpy array containing (x, y)-coordinates.
+
+    Args:
+    - shape: The facial landmark shape object.
+    - dtype: The data type for the numpy array (default is "int").
+    - offset: A tuple representing the offset to be added to each (x, y)-coordinate.
+
+    Returns:
+    - coords: A numpy array containing the list of (x, y)-coordinates.
+    """
     # initialize the list of (x, y)-coordinates
     coords = np.zeros((shape.num_parts, 2), dtype=dtype)
     # loop over all facial landmarks and convert them
@@ -187,6 +198,19 @@ def shape_to_np(shape, dtype="int", offset=(0,0)):
     return coords
 
 def analyseFace(img, detector, predictor, quality=0, offset=(0, 0)):
+    """
+    Analyzes the face in the given image using the provided detector and predictor.
+
+    Args:
+        img: The input image to analyze.
+        detector: The face detector function.
+        predictor: The facial landmark predictor function.
+        quality: The quality parameter for the detection (default is 0).
+        offset: The offset tuple for adjusting the detected face position (default is (0, 0)).
+
+    Returns:
+        A tuple containing the analyzed face data and the additional result data, along with the training type.
+    """
     dets = detector(img, quality)
     result = []
     result_other = []
@@ -331,6 +355,15 @@ def analyseFace(img, detector, predictor, quality=0, offset=(0, 0)):
     return result, result_other, train_type
 
 def computeGradient(img):
+    """
+    Compute the gradient of the input image.
+
+    Args:
+        img: Input image as a NumPy array.
+
+    Returns:
+        out: Gradient of the input image as a NumPy array.
+    """
     # out2 = cv2.Sobel(img,cv2.CV_8U,1,0,ksize=5)
     out = np.zeros((img.shape[0], img.shape[1]), dtype=np.float32)  # create a receiver array
     if img.shape[0] < 2 or img.shape[1] < 2:  # TODO I'm not sure that secure out of range
@@ -347,6 +380,9 @@ def computeGradient(img):
 
 
 def testPossibleCentersFormula(x, y, weight, gx, gy, out):
+    """
+    Calculate the possible centers formula for the given input parameters.
+    """
     for cy in range(0, out.shape[0]):
         for cx in range(0, out.shape[1]):
             if x == cx and y == cy:
@@ -362,6 +398,16 @@ def testPossibleCentersFormula(x, y, weight, gx, gy, out):
 
 
 def findEyeCenter(eyeImage, offset):
+    """
+    Find the center of the eye in the given eye image.
+
+    Args:
+    - eyeImage: the image of the eye
+    - offset: offset to be added to the result
+
+    Returns:
+    - Tuple of coordinates representing the center of the eye
+    """
     if (len(eyeImage.shape) <= 0 or eyeImage.shape[0] <= 0 or eyeImage.shape[1] <= 0):
         return tuple(map(operator.add, (0, 0), offset))
     if (int(eyeImage.size / (eyeImage.shape[0] * (eyeImage.shape[1]))) == 3):
@@ -417,6 +463,16 @@ def findEyeCenter(eyeImage, offset):
 
 
 def matrixMagnitude(gradX, gradY):
+    """
+    Calculate the magnitude of the matrix based on the gradients gradX and gradY.
+
+    Args:
+        gradX: numpy array representing the x-gradient
+        gradY: numpy array representing the y-gradient
+
+    Returns:
+        numpy array: matrix of magnitudes
+    """
     mags = np.zeros((gradX.shape[0], gradX.shape[1]), dtype=np.float32)  # create a receiver array
     for y in range(0, mags.shape[0]):
         for x in range(0, mags.shape[1]):
@@ -428,12 +484,30 @@ def matrixMagnitude(gradX, gradY):
 
 
 def computeDynamicThreshold(gradientMatrix, DevFactor):
+    """
+    Compute dynamic threshold based on the gradient matrix and deviation factor.
+
+    Parameters:
+    - gradientMatrix: the input gradient matrix
+    - DevFactor: the deviation factor
+
+    Returns:
+    - float: the computed dynamic threshold
+    """
     (meanMagnGrad, meanMagnGrad) = cv2.meanStdDev(gradientMatrix)
     stdDev = meanMagnGrad[0] / math.sqrt(gradientMatrix.shape[0] * gradientMatrix.shape[1])
     return DevFactor * stdDev + meanMagnGrad[0]
 
 
 def getEyePOI(eyes):
+    """
+    Generate the points of interest (POI) for each eye in the input list of eyes. 
+    Parameters:
+    - eyes: a list of tuples, where each tuple represents the coordinates of the left and right corners of the eye in the format (x, y).
+
+    Returns:
+    - result: a list of tuples, where each tuple represents the coordinates of the left, top, right, and bottom corners of the POI bounding box in the format (left, top, right, bottom).
+    """
     result = []
     for eye in eyes:
         left = eye[0][0]
@@ -446,6 +520,16 @@ def getEyePOI(eyes):
 
 
 def scale(rectangle, scale):
+    """
+    Scales a rectangle by the given factor.
+
+    Parameters:
+    - rectangle: tuple of 4 integers representing the coordinates of the top-left and bottom-right corners of the rectangle
+    - scale: float representing the factor by which the rectangle should be scaled
+
+    Returns:
+    - tuple of 4 integers representing the coordinates of the scaled rectangle
+    """
     width = rectangle[2] - rectangle[0]
     height = rectangle[3] - rectangle[1]
     midddle = (width / 2 + rectangle[0], height / 2 + rectangle[1])
@@ -457,6 +541,16 @@ def scale(rectangle, scale):
 
 
 def getEyePos(corners, img):
+    """
+    A function to find the eye position based on the given corners and image.
+    
+    Args:
+    - corners: list, the corners of the eye region
+    - img: array, the input image
+    
+    Returns:
+    - list: the coordinates of the eye position
+    """
     # here we don't need both but the biggest one
     eyes = getEyePOI(corners)
     # print('corners', corners, '\neyes', eyes)
@@ -474,6 +568,14 @@ def getEyePos(corners, img):
     return [findEyeCenter(croppedImage, [scalesrect[0], scalesrect[1]]), corners[choosen]]
 
 def getEyePos2(corners, img, left_or_right=0):
+    """
+    A function to get the eye position with the option to choose left or right eye.
+    
+    :param corners: list of corner coordinates
+    :param img: input image
+    :param left_or_right: integer indicating left (0) or right (1) eye, default is 0
+    :return: list containing the eye center and the corner coordinates of the chosen eye
+    """
     # here we don't need both but the biggest one
     eyes = getEyePOI(corners)
     # print('corners', corners, '\neyes', eyes)
@@ -496,6 +598,9 @@ def getEyePos2(corners, img, left_or_right=0):
 
 #############
 def sub_eyecenter_and_pupilcenter(tFacePOI, pupilcenter, cameraMatrix, tproj_matrix):
+    """
+    A function to calculate the sub eyecenter and pupilcenter using the given parameters and return the result.
+    """
     print("//////////sub_eyecenter_and_pupilcenter")
     print('FacePOI[5]',tFacePOI[6], pupilcenter[0], pupilcenter[1])
     # print('//////', np.asmatrix(proj_matrix).I)
@@ -524,6 +629,15 @@ def sub_eyecenter_and_pupilcenter(tFacePOI, pupilcenter, cameraMatrix, tproj_mat
 
     return np.subtract(b[0:-1,1], b[0:-1,0]), b
 def rotMatFromEye(eyeData):
+    """
+    A function to calculate the rotation matrix from eye data.
+
+    Parameters:
+    eyeData (array): The input eye data containing position and axis information.
+
+    Returns:
+    array: The rotation matrix calculated from the eye data.
+    """
     # print eyeData
     # eyeDiameter = eyeConst * Distance(eyeData[1][0], eyeData[1][1])
     eyeCenter = ((eyeData[1][0][0] + eyeData[1][1][0]) / 2.0, (eyeData[1][0][1] + eyeData[1][1][1]) / 2.0)
@@ -555,6 +669,9 @@ def rotMatFromEye(eyeData):
 
 # Given the data from a faceExtract
 def getCoordFromFace(FacePOI, eyeData, img, cameraMatrix, distCoeffs):
+    """
+    This function takes in FacePOI, eyeData, img, cameraMatrix, and distCoeffs as parameters and returns tview_point, nose_end_point2D, leye_end_point2D, imgpts, lpupil_end_point2D, leyeball_to_pupil_point2D, leyeball_to_pupil_point2D2.
+    """
     print("\n//////////////getCoordFromFace")
     # SOLVER FOR PNPs
     retval, rvec, tvec = cv2.solvePnP(ThreeDFacePOI2, FacePOI, cameraMatrix, distCoeffs);
@@ -699,6 +816,12 @@ def getCoordFromFace(FacePOI, eyeData, img, cameraMatrix, distCoeffs):
 
 
 def perpendicular(a):
+    """
+    Calculate the perpendicular vector to the input vector 'a' in 2D space.
+    
+    :param a: numpy array representing the input vector
+    :return: numpy array representing the perpendicular vector
+    """
     b = np.empty_like(a)
     b[0] = -a[1]
     b[1] = a[0]
@@ -706,6 +829,15 @@ def perpendicular(a):
 
 
 def clamp(n, minn, maxn):
+    """
+    A function that clamps a value within a specified range defined by minn and maxn parameters.
+    Parameters:
+    - n: The value to be clamped
+    - minn: The lower bound of the range
+    - maxn: The upper bound of the range
+    Returns:
+    - The clamped value within the specified range
+    """
     if n < minn:
         return minn
     elif n > maxn:
@@ -716,11 +848,34 @@ def clamp(n, minn, maxn):
 
 
 def intersectionWithPlan(linePoint, lineDir, planOrth, planPoint):
+    """
+    Calculate the intersection point of a line with a plane.
+
+    Parameters:
+    - linePoint: the point on the line
+    - lineDir: the direction vector of the line
+    - planOrth: the normal vector of the plane
+    - planPoint: a point on the plane
+
+    Returns:
+    - intersectionPoint: the point of intersection between the line and the plane
+    """
     d = np.dot(np.subtract(linePoint, planPoint), planOrth) / (np.dot(lineDir, planOrth))
     intersectionPoint = np.subtract(np.multiply(d, lineDir), linePoint)
     return intersectionPoint
 
 def draw_xyz_axis(img, corners, imgpts):
+    """
+    Draw XYZ axis on the image based on the provided corners and image points.
+    
+    Args:
+    - img: The input image
+    - corners: The corners of the object in the image
+    - imgpts: The image points
+    
+    Returns:
+    - img: The image with XYZ axis drawn on it
+    """
     corner = tuple(corners[0].ravel())
     # print(corner)
     # print(tuple(imgpts[0].ravel()))
@@ -730,6 +885,16 @@ def draw_xyz_axis(img, corners, imgpts):
     return img
 
 def getIntersection(line1, line2):
+    """
+    Calculate the intersection point of two lines given by the endpoints line1 and line2.
+
+    Args:
+    line1: A tuple representing the endpoints of the first line.
+    line2: A tuple representing the endpoints of the second line.
+
+    Returns:
+    A tuple containing the x and y coordinates of the intersection point, or False if the lines are parallel.
+    """
     s1 = np.array(line1[0])
     e1 = np.array(line1[1])
 
@@ -820,6 +985,16 @@ class eyeTracker(object):
         self.ref_p3dmodel = paramPOI
 
     def preprocess(self, image, activeROI):
+        """
+        Preprocesses an image using the provided active region of interest (ROI).
+
+        Args:
+            image: The input image to be preprocessed.
+            activeROI: The active region of interest (ROI) in the image.
+
+        Returns:
+            int: The number of detected faces in the preprocessed image.
+        """
         x = activeROI[0]
         y = activeROI[1]
         w = activeROI[2]
@@ -833,6 +1008,16 @@ class eyeTracker(object):
         return len(self.faces_eye)
 
     def algo_run(self, gray, tSelect=0):
+        """
+        Run the algorithm for eye tracking and gaze estimation.
+
+        Parameters:
+            gray: The input grayscale image.
+            tSelect: The type of information to be collected (default 0).
+
+        Returns:
+            None
+        """
         self.mEye_centers_r = []
         self.mEye_centers_l = []
         self.mRT = []
@@ -1039,6 +1224,17 @@ class eyeTracker(object):
         return tview_points
 
     def getEyeballCenterGaze(self, ref_point, rvec, tvec):
+        """
+        Calculate the eyeball center gaze based on the given reference point, rotation vector, and translation vector.
+
+        Parameters:
+        - ref_point: the reference point
+        - rvec: the rotation vector
+        - tvec: the translation vector
+
+        Returns:
+        - eyeballCenterGaze: the calculated eyeball center gaze
+        """
         temp_point = ref_point.copy()
         temp_point[2] = 25
 
@@ -1053,6 +1249,10 @@ class eyeTracker(object):
     K0 = 0.53    #cornea radius
     '''
     def getEyeGaze_method_two_EyeModel(self, pupilC_pnt, rvec, tvec, ref_eyeC_pnt, img_eyeC_pnt, k=1.31, k0 = 0.53):
+        """
+        A description of the entire function, its parameters, and its return types.
+        """
+        eyeConst = 10
         # print("\n\n///getEyeGaze_method_two_EyeModel//////////\n")
         rvec_matrix = cv2.Rodrigues(rvec)[0]
         proj_matrix = np.hstack((rvec_matrix, tvec))
@@ -1096,6 +1296,9 @@ class eyeTracker(object):
         return eyeGazePoint_2d
 
     def extract_eyeballcenter_to_pupilcenter(self, img_eyeC_pnt, pupilcenter, tproj_matrix, tcamera_matrix, tdist_coeffs):
+        """
+        A function to extract the eye center to pupil center, using various transformations and calculations, and returning the result.
+        """
         print("//////////sub_eyecenter_and_pupilcenter")
         print('image eyecenter ({:04.2f} {:04.2f}), pupil center ({:04.2f}, {:04.2f}) '.format(img_eyeC_pnt[0], img_eyeC_pnt[1], pupilcenter[0], pupilcenter[1]))
         # print('//////', np.asmatrix(proj_matrix).I)
@@ -1121,6 +1324,15 @@ class eyeTracker(object):
         return np.subtract(b[0:-1, 1], b[0:-1, 0]), b
 
     def eye_aspect_ratio(self, teye):
+        """
+        A function to calculate the eye aspect ratio based on the given eye landmarks.
+        
+        Args:
+            teye: A list of landmarks for the eye.
+
+        Returns:
+            Tuple containing the status, text, and eye aspect ratio.
+        """
         ttext = "Not Detect"
         tstatus = RET_NOT_DETECT
         if(teye[0][0] == 0 or teye[0][1] == 0):
@@ -1152,6 +1364,16 @@ class eyeTracker(object):
         return tstatus, ttext, ear
 
     def mouth_open(self, tmouth_in, tmouth_out):
+        """
+        Function to determine if the mouth is open or closed based on the input points.
+        
+        Args:
+            tmouth_in (list): List of points representing the inner part of the mouth.
+            tmouth_out (list): List of points representing the outer part of the mouth.
+        
+        Returns:
+            tuple: A tuple containing the status and text indicating if the mouth is open or closed.
+        """
         ttext = "Not Detect"
         tstatus = RET_NOT_DETECT
 
@@ -1226,6 +1448,21 @@ class eyeTracker(object):
             # ALARM_ON = False
 
     def analyseFace_from_dlib(self, img, detector, predictor, quality=0, offset=(0, 0)):
+        """
+        Analyze face using dlib library
+
+        Parameters:
+        - img: The input image
+        - detector: The face detector
+        - predictor: The landmark predictor
+        - quality: The quality parameter (default 0)
+        - offset: The offset for the result points (default (0, 0))
+
+        Returns:
+        - result: List of face data
+        - result_other: Additional face data
+        - result_faces_points: List of face points
+        """
         dets = detector(img)
         result = []
         result_other = []

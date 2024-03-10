@@ -27,11 +27,15 @@ Eye tracking을 하기위한 여러 오픈소스를 통해 구현해 보았다.
 | video_eye_tracker_01.py      | 학습된 얼굴특징점(68,21,19,12 point)변경          | --     |
 | video_eye_tracker_02.py      | face gaze, camera plain gaze, eyeball gaze      | --     |
 | video_eye_tracker_03.py      | face gaze, camera plain gaze, eyeball gaze      | video bufferless     |
-| eye_tracker_05.py      | core code          | --     |
+| video_eye_tracker_04.py      | face gaze, camera plain gaze, eyeball gaze      | view type 변경     |
+| video_eye_tracker_05.py      | face gaze, camera plain gaze, eyeball gaze      | imutils video 사용     |
 | PupilDetector.py       | speed up 4->12 fps          | 얼굴, 동공 찾기     |
 | --     | --          | --     |
+| eye_tracker_05.py      | core code          | --     |
 | eye_tracker_06.py      | gaze 튜닝 및 속도 업          | --     |
-| --       | --          | --     |
+| video_capture_1_in_2.py       | 2가지 영상 병합          | --     |
+| video_capture_1_in_3.py       | 3가지 영상 병합          | --     |
+| video_record.py       | video recoding          | --     |
 
 # reference and code
 1. https://github.com/BenjaminPoilve/Eye-Gaze-Estimator Eye gaze base code

@@ -1,4 +1,4 @@
-# face_two_person.png
+﻿# face_two_person.png
 # ellipse_eye_black_right_cam.png
 #Image0_28377_5718597709.png
 # mouse_open.png
@@ -119,6 +119,18 @@ FACIAL_LANDMARKS_INDEXES = OrderedDict([
 
 
 def visualize_facial_landmarks(image, shape, colors=None, alpha=0.20):
+    """
+    Generate a visualization of facial landmarks on the input image.
+
+    Parameters:
+    - image: The input image
+    - shape: The facial landmarks coordinates
+    - colors: List of colors for each facial landmark region
+    - alpha: The transparency of the overlay
+
+    Returns:
+    - The output image with facial landmarks visualized
+    """
     facial_features_cordinates = {}
 
     # create two copies of the input image -- one for the
@@ -161,6 +173,15 @@ def visualize_facial_landmarks(image, shape, colors=None, alpha=0.20):
 
 
 def detect_face_eye_using_dlib(gray):
+    """
+    Function to detect faces and eyes using dlib library.
+    
+    Args:
+        gray: A grayscale image to detect faces and eyes.
+
+    Returns:
+        Tuple containing the number of detected faces and a list of facial landmark coordinates for each face.
+    """
     # create face detector, predictor
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor('./dlib/shape_predictor_68_face_landmarks.dat')
@@ -209,6 +230,17 @@ def detect_face_eye_using_dlib(gray):
 
 
 def detect_face_eye_using_opencv(gray):
+    """
+    Detects faces and eyes in an image using OpenCV.
+
+    Parameters:
+    gray (numpy.ndarray): The input grayscale image.
+
+    Returns:
+    int: The number of detected faces.
+    list: The list of coordinates of the detected faces.
+    list: The list of coordinates of the detected eyes.
+    """
     face_list = []
     eye_list=[]
     face_cascade = cv2.CascadeClassifier('./haar/haarcascade_frontalface_default.xml')
@@ -237,6 +269,15 @@ def detect_face_eye_using_opencv(gray):
     return len(face_list), face_list, eye_list
 
 def fit_circle(data):
+    """
+    Fit a circle to a set of 2D points.
+
+    Parameters:
+    - data: a 2D array containing the x and y coordinates of the points
+
+    Returns:
+    - Tuple containing the x-coordinate, y-coordinate, and radius of the fitted circle
+    """
     #data [[x1,y],[x2,y2]...]
     xs = data[:,0].reshape(-1,1)
     ys = data[:,1].reshape(-1,1)
@@ -252,6 +293,9 @@ def fit_circle(data):
     return (cx,cy,r)
 
 def fit_rotated_ellipse(data):
+    """
+    Fit a rotated ellipse to the given data points and return the parameters of the ellipse.
+    """
     xs = data[:,0].reshape(-1,1)
     ys = data[:,1].reshape(-1,1)
 
@@ -488,6 +532,15 @@ def fit_rotated_ellipse_svd(data, th):
     # return (cx,cy,w,h,theta)
 
 def calc_and_draw_ellipse_full(img_path):
+    """
+    A function that calculates and draws ellipses on the input image.
+
+    Args:
+    img_path (str): The file path of the input image.
+
+    Returns:
+    None
+    """
     color_list = [(238,0,0),(0,252,124),(142,56,142)]
     # color_list = [(255,0,0),(0,255,0),(255,255,0)]
 

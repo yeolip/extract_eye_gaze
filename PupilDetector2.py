@@ -17,6 +17,16 @@ from scipy.ndimage.filters import gaussian_filter
 class GradientIntersect:
 
 	def createGrid(self, Y, X):
+		"""
+		Create a grid based on the given Y and X values.
+
+		Args:
+		    Y: int, the Y dimension of the grid
+		    X: int, the X dimension of the grid
+
+		Returns:
+		    numpy array, the created grid
+		"""
     
 		# create grid vectors
 		grid = np.array([[y,x] for y in range(1-Y,Y) for x in range (1-X,X)], dtype='float')
@@ -32,6 +42,19 @@ class GradientIntersect:
 		return grid
 
 	def createGradient(self, image):
+		"""
+		Create a gradient from the given image.
+
+		Parameters:
+		self : object
+			The object itself.
+		image : numpy.ndarray
+			The input image.
+
+		Returns:
+		numpy.ndarray
+			The calculated gradient.
+		"""
 
 		# get image size
 		Y, X = image.shape
@@ -50,6 +73,14 @@ class GradientIntersect:
 		return gradient
 
 	def locate(self, image, sigma = 2, accuracy = 1):
+		"""
+		Locates the maximum value in the given image using a grid search algorithm with specified accuracy.
+		
+		:param image: The input image for locating the maximum value.
+		:param sigma: The standard deviation for blurring the image (default = 2).
+		:param accuracy: The step size for the grid search (default = 1).
+		:return: A tuple containing the y and x coordinates of the maximum value in the image.
+		"""
 		
 		# get image size
 		Y, X = image.shape
@@ -115,6 +146,19 @@ class GradientIntersect:
 		return (yval, xval)
 
 	def track(self, image, prev, sigma = 2, radius=50, distance = 10):
+		"""
+		Track and locate a point in an image using a grid-based approach.
+
+		Parameters:
+		    image (numpy array): The input image.
+		    prev (tuple): The coordinates of the previous location.
+		    sigma (int, optional): The standard deviation for Gaussian blur. Defaults to 2.
+		    radius (int, optional): The radius for selecting the image region. Defaults to 50.
+		    distance (int, optional): The distance within which to search for the next location. Defaults to 10.
+
+		Returns:
+		    tuple: The updated coordinates of the located point.
+		"""
 		py, px = prev
 		
 		# select image
@@ -170,6 +214,16 @@ class IsophoteCurvature:
 		self.maxrad = maxrad
 
 	def locate(self, image):
+		"""
+		Locates the maximum position in the center map of the given image.
+
+		Parameters:
+		- self: the instance of the class
+		- image: the input image
+
+		Returns:
+		- position: a tuple of the maximum position in the center map
+		"""
 
 		# normalize image
 		image = gaussian_filter(image, sigma=self.blur)
